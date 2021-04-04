@@ -1,5 +1,12 @@
-#include "global.h"
+#include "ui.h"
 #include "logos.h"
+
+static ToolbarButton *toolbarButtons[TOOLBAR_SIZE];
+static ToolbarButton zoomInButton;
+static ToolbarButton zoomOutButton;
+static ToolbarButton contrastButton;
+static ToolbarButton orientationButton;
+static ToolbarButton bookListButton;
 
 uint32_t backColor = LCD_COLOR_WHITE;
 uint32_t textColor = LCD_COLOR_BLACK;
@@ -38,45 +45,45 @@ void initMainToolbar(void)
 	mainToolbar.padding = TOOLBAR_PADDING;
 	mainToolbar.size = TOOLBAR_SIZE;
 
-	ToolbarButton toolbarButtons[TOOLBAR_SIZE];
+	mainToolbar.x = BSP_LCD_GetXSize() - mainToolbar.margin - 2*mainToolbar.padding - mainToolbar.buttonWidth;
+	mainToolbar.y = mainToolbar.margin;
+	mainToolbar.w = mainToolbar.buttonWidth + 2*mainToolbar.padding;
+	mainToolbar.h = mainToolbar.padding + mainToolbar.size * (mainToolbar.buttonHeight + mainToolbar.padding);
+
 	mainToolbar.buttons = toolbarButtons;
 
-	ToolbarButton zoomInButton;
 	zoomInButton.onClickCallback = &zoomInButton_OnClick;
 	zoomInButton.icon = zoomInBitmap;
 	strcpy(zoomInButton.tooltip, "Zoom In");
-	toolbarButtons[0] = zoomInButton;
+	toolbarButtons[0] = &zoomInButton;
 
-	ToolbarButton zoomOutButton;
 	zoomOutButton.onClickCallback = &zoomOutButton_OnClick;
 	zoomOutButton.icon = zoomOutBitmap;
 	strcpy(zoomOutButton.tooltip, "Zoom Out");
-	toolbarButtons[1] = zoomOutButton;
+	toolbarButtons[1] = &zoomOutButton;
 
-	ToolbarButton contrastButton;
 	contrastButton.onClickCallback = &contrastButton_OnClick;
 	contrastButton.icon = contrastBitmap;
 	strcpy(contrastButton.tooltip, "Change the contrast mode");
-	toolbarButtons[2] = contrastButton;
+	toolbarButtons[2] = &contrastButton;
 
-	ToolbarButton orientationButton;
 	orientationButton.onClickCallback = &orientationButton_OnClick;
 	orientationButton.icon = orientationBitmap;
 	strcpy(orientationButton.tooltip, "Rotate the screen");
-	toolbarButtons[3] = orientationButton;
+	toolbarButtons[3] = &orientationButton;
 
-	ToolbarButton bookListButton;
 	bookListButton.onClickCallback = &bookListButton_OnClick;
 	bookListButton.icon = bookListBitmap;
 	strcpy(bookListButton.tooltip, "Back to the Book List");
-	toolbarButtons[4] = bookListButton;
+	toolbarButtons[4] = &bookListButton;
 
-	for (int i = 0; i < TOOLBAR_SIZE; i++)
+	for (int i = 0; i < mainToolbar.size; i++)
 	{
-		toolbarButtons[i].x = BSP_LCD_GetXSize() - TOOLBAR_MARGIN - TOOLBAR_PADDING - BUTTON_WIDTH;
-		toolbarButtons[i].y = TOOLBAR_MARGIN + TOOLBAR_PADDING + (BUTTON_HEIGHT + TOOLBAR_PADDING) * i;
+		toolbarButtons[i]->x = mainToolbar.x + mainToolbar.padding;
+		toolbarButtons[i]->y = mainToolbar.y + mainToolbar.padding + (mainToolbar.buttonHeight + mainToolbar.padding) * i;
 
-		toolbarButtons[i].onHoverCallback = &toolBarButton_OnHover;
+		toolbarButtons[i]->isEnabled = 1;
+		toolbarButtons[i]->onHoverCallback = &toolBarButton_OnHover;
 	}
 }
 
@@ -92,6 +99,9 @@ void zoomInButton_OnClick(ToolbarButton *button)
 
 	if (newFontSize == 24)
 		button->isEnabled = 0;
+
+	if (!zoomOutButton.isEnabled)
+		zoomOutButton.isEnabled = 1;
 }
 
 void zoomOutButton_OnClick(ToolbarButton *button)
@@ -101,6 +111,9 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 
 	if (newFontSize == 8)
 		button->isEnabled = 0;
+
+	if (!zoomInButton.isEnabled)
+		zoomInButton.isEnabled = 1;
 }
 
 void contrastButton_OnClick(ToolbarButton *button)

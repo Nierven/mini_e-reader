@@ -1,41 +1,56 @@
 #include "logic.h"
 #include "touchscreen.h"
 #include "toolbar.h"
-#include "global.h"
+#include "ui.h"
 
 void initLogic(void)
 {
-	initMainToolbar();
+
 }
 
 void logicHandler(void)
 {
 	static TickType_t toolbarLastActivityTime = 0;
-	static uint8_t isToolbarOpen = 0;
 
 	switch (getTouchscreenEvent())
 	{
 		case Click:
 		{
-			if (!isToolbarOpen)
+			if (!mainToolbar.isVisible)
 			{
-				openToolbar(&mainToolbar);
-				isToolbarOpen = 1;
+				mainToolbar.isVisible = 1;
+				toolbarLastActivityTime = xTaskGetTickCount();
 			}
 			else
 			{
-				toolbar_OnClick(&mainToolbar, lastThumbState.x, lastThumbState.y);
+				if (lastThumbState.x > mainToolbar.x && lastThumbState.x < mainToolbar.x + mainToolbar.w &&
+					lastThumbState.y > mainToolbar.y && lastThumbState.y < mainToolbar.y + mainToolbar.h)
+				{
+					toolbarLastActivityTime = xTaskGetTickCount();
+					toolbar_OnClick(&mainToolbar, lastThumbState.x, lastThumbState.y);
+				}
+				else
+				{
+					mainToolbar.isVisible = 0;
+				}
 			}
 
-			toolbarLastActivityTime = xTaskGetTickCount();
 			break;
 		}
 		case Move:
 		{
-			if (isToolbarOpen)
+			if (mainToolbar.isVisible)
 			{
-				toolbarLastActivityTime = xTaskGetTickCount();
-				toolbar_OnHover(&mainToolbar, lastThumbState.x, lastThumbState.y);
+				if (lastThumbState.x > mainToolbar.x && lastThumbState.x < mainToolbar.x + mainToolbar.w &&
+					lastThumbState.y > mainToolbar.y && lastThumbState.y < mainToolbar.y + mainToolbar.h)
+				{
+					toolbarLastActivityTime = xTaskGetTickCount();
+					toolbar_OnHover(&mainToolbar, lastThumbState.x, lastThumbState.y);
+				}
+				else
+				{
+					mainToolbar.isVisible = 0;
+				}
 			}
 
 			break;
@@ -46,11 +61,8 @@ void logicHandler(void)
 		}
 	}
 
-	if (isToolbarOpen && (xTaskGetTickCount() - toolbarLastActivityTime) > TOOLBAR_MAX_INACTIVITY_TIME)
-	{
-		closeToolbar(&mainToolbar);
-		isToolbarOpen = 0;
-	}
+	if (mainToolbar.isVisible && (xTaskGetTickCount() - toolbarLastActivityTime) > TOOLBAR_MAX_INACTIVITY_TIME)
+		mainToolbar.isVisible = 0;
 
-	osDelay(30);
+	osDelay(15);
 }

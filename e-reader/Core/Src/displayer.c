@@ -1,7 +1,8 @@
+#include <string.h>
 #include "displayer.h"
 #include "ethernet.h"
 #include "toolbar.h"
-#include "global.h"
+#include "ui.h"
 
 static uint8_t visibleLayer;
 
@@ -16,6 +17,7 @@ void initScreen(void)
 	BSP_LCD_SetLayerVisible(1, ENABLE);
 
 	setFont(12);
+	initMainToolbar();
 
 	// Init first layer
 	BSP_LCD_SelectLayer(0);

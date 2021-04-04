@@ -27,9 +27,14 @@ typedef struct Toolbar_t
 
 	int32_t buttonWidth;
 	int32_t buttonHeight;
-	ToolbarButton *buttons;
+	ToolbarButton **buttons;
 
 	uint8_t isVisible;
+
+	int32_t x;
+	int32_t y;
+	int32_t w;
+	int32_t h;
 } Toolbar;
 
 void openToolbar(Toolbar *toolbar);
