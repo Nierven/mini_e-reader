@@ -8,6 +8,7 @@ static ToolbarButton contrastButton;
 static ToolbarButton orientationButton;
 static ToolbarButton bookListButton;
 
+uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
 uint32_t textColor = LCD_COLOR_BLACK;
 uint16_t charMaxWidth;
@@ -43,6 +44,7 @@ void initMainToolbar(void)
 	mainToolbar.buttonWidth = BUTTON_WIDTH;
 	mainToolbar.margin = TOOLBAR_MARGIN;
 	mainToolbar.padding = TOOLBAR_PADDING;
+	mainToolbar.radius = TOOLBAR_RADIUS;
 	mainToolbar.size = TOOLBAR_SIZE;
 
 	mainToolbar.x = BSP_LCD_GetXSize() - mainToolbar.margin - 2*mainToolbar.padding - mainToolbar.buttonWidth;
@@ -81,9 +83,7 @@ void initMainToolbar(void)
 	{
 		toolbarButtons[i]->x = mainToolbar.x + mainToolbar.padding;
 		toolbarButtons[i]->y = mainToolbar.y + mainToolbar.padding + (mainToolbar.buttonHeight + mainToolbar.padding) * i;
-
 		toolbarButtons[i]->isEnabled = 1;
-		toolbarButtons[i]->onHoverCallback = &toolBarButton_OnHover;
 	}
 }
 
@@ -118,7 +118,9 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 
 void contrastButton_OnClick(ToolbarButton *button)
 {
-
+	highContrast ^= 1;
+	backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
+	textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
 }
 
 void orientationButton_OnClick(ToolbarButton *button)

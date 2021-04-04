@@ -1068,7 +1068,7 @@ void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
   else 
   {
     input_color_mode = CM_RGB888;
-    width += 1;
+//    width += 1;
   }
 
   /* Bypass the bitmap header */

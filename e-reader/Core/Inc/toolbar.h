@@ -12,10 +12,10 @@ typedef struct ToolbarButton_t
 	int32_t y;
 
 	uint8_t isEnabled;
+	uint8_t isHovered;
 	char tooltip[25];
 	uint8_t *icon;
 
-	void (*onHoverCallback)(struct ToolbarButton_t *button);
 	void (*onClickCallback)(struct ToolbarButton_t *button);
 } ToolbarButton;
 
@@ -24,6 +24,7 @@ typedef struct Toolbar_t
 	uint8_t size;
 	int32_t margin;
 	int32_t padding;
+	int32_t radius;
 
 	int32_t buttonWidth;
 	int32_t buttonHeight;
