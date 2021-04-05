@@ -30,7 +30,6 @@ void setFont(int fontSize)
 
 Toolbar mainToolbar;
 
-static void toolBarButton_OnHover(ToolbarButton *button);
 static void zoomInButton_OnClick(ToolbarButton *button);
 static void zoomOutButton_OnClick(ToolbarButton *button);
 static void contrastButton_OnClick(ToolbarButton *button);
@@ -85,11 +84,6 @@ void initMainToolbar(void)
 		toolbarButtons[i]->y = mainToolbar.y + mainToolbar.padding + (mainToolbar.buttonHeight + mainToolbar.padding) * i;
 		toolbarButtons[i]->isEnabled = 1;
 	}
-}
-
-void toolBarButton_OnHover(ToolbarButton *button)
-{
-
 }
 
 void zoomInButton_OnClick(ToolbarButton *button)

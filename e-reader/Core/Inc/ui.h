@@ -1,5 +1,5 @@
-#ifndef GLOBAL_H
-#define GLOBAL_H
+#ifndef UI_H
+#define UI_H
 
 #include "cmsis_os.h"
 #include "stm32746g_discovery_lcd.h"
@@ -28,4 +28,4 @@ void setFont(int fontSize);
 void initMainToolbar(void);
 extern Toolbar mainToolbar;
 
-#endif // GLOBAL_H
+#endif // UI_H

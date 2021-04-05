@@ -82,12 +82,11 @@ static void displayBook(void)
 
 	for (int i = pos; i < bookSize - pos; i++)
 	{
-		if (book[i] == ' ')// || book[i] == '\n')
+		if (book[i] == ' ' || book[i] == '\n')
 		{
 			// Get the optimal space length according to how many letters and space we have
-			int actualOptimalSpace;
-			if (spacesCounter != 0) actualOptimalSpace = (BSP_LCD_GetXSize() - lettersCounter * textFont->Width) / spacesCounter;
-			else actualOptimalSpace = (BSP_LCD_GetXSize() - lettersCounter * textFont->Width);
+			int actualOptimalSpace = BSP_LCD_GetXSize() - lettersCounter * textFont->Width;
+			if (spacesCounter != 0) actualOptimalSpace /= spacesCounter;
 
 			if (actualOptimalSpace < minSpace) // If too small, then discard the last word and compute the best length
 			{
@@ -97,10 +96,8 @@ static void displayBook(void)
 				actualOptimalSpace = (BSP_LCD_GetXSize() - lettersCounter * textFont->Width) / spacesCounter;
 				displayLine(currentLinePos, lettersCounter + spacesCounter, actualOptimalSpace, currentLine);
 
-				currentLinePos = currentLinePos + lettersCounter + spacesCounter;
-				i = currentLinePos;
-
-				if (book[currentLinePos] == ' ') { currentLinePos++; i++; }
+				currentLinePos = currentLinePos + lettersCounter + spacesCounter + 1;
+				i = currentLinePos - 1;
 				if (++currentLine == charMaxHeight)
 					break;
 
@@ -108,32 +105,26 @@ static void displayBook(void)
 				wordLettersCounter = 0;
 				spacesCounter = 0;
 			}
-//			else if (book[i] == '\n')
-//			{
-//				if (actualOptimalSpace > maxSpace)
-//					actualOptimalSpace = 1;
-//
-//				displayLine(currentLinePos, i - currentLinePos, actualOptimalSpace, currentLine);
-//
-//				currentLinePos = i+1;
-//				i = currentLinePos;
-//
-//				if (++currentLine == charMaxHeight)
-//					break;
-//
-//				lettersCounter = 0;
-//				wordLettersCounter = 0;
-//				spacesCounter = 0;
-//			}
-//			else
+			else if (book[i] == '\n')
+			{
+				if (actualOptimalSpace > maxSpace)
+					actualOptimalSpace = 1;
+
+				displayLine(currentLinePos, i - currentLinePos, actualOptimalSpace, currentLine);
+
+				currentLinePos = i+1;
+				if (++currentLine == charMaxHeight)
+					break;
+
+				lettersCounter = 0;
+				wordLettersCounter = 0;
+				spacesCounter = 0;
+			}
+			else
 			{
 				spacesCounter++;
 				wordLettersCounter = 0;
 			}
-		}
-		else if (book[i] == '\n')
-		{
-			return;
 		}
 		else
 		{
