@@ -74,5 +74,5 @@ void logicHandler(void)
 	if (mainToolbar.isVisible && (xTaskGetTickCount() - toolbarLastActivityTime) > TOOLBAR_MAX_INACTIVITY_TIME)
 		mainToolbar.isVisible = 0;
 
-	osDelay(15);
+	osDelay(10);
 }

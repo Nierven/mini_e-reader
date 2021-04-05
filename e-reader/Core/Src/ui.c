@@ -106,7 +106,7 @@ void initMainToolbar(void)
 void zoomInButton_OnClick(ToolbarButton *button)
 {
 	// Wait for the ui to be available
-	if(xSemaphoreTake(semaphore_ui, (TickType_t) 100) == pdTRUE)
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
 		int newFontSize = getFont() + 4;
 		setFont(newFontSize);
@@ -127,7 +127,7 @@ void zoomInButton_OnClick(ToolbarButton *button)
 void zoomOutButton_OnClick(ToolbarButton *button)
 {
 	// Wait for the ui to be available
-	if(xSemaphoreTake(semaphore_ui, (TickType_t) 100) == pdTRUE)
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
 		int newFontSize = getFont() - 4;
 		setFont(newFontSize);
@@ -147,9 +147,15 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 
 void contrastButton_OnClick(ToolbarButton *button)
 {
-	highContrast ^= 1;
-	backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
-	textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+	{
+		highContrast ^= 1;
+		backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
+		textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
+
+		xSemaphoreGive(semaphore_ui);
+	}
 }
 
 void orientationButton_OnClick(ToolbarButton *button)
