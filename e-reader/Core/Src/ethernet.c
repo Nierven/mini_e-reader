@@ -14,10 +14,6 @@ void initEthernet(void)
 
 	bookSize = strlen(test);
 	strcpy(book, test);
-
-//	for (int i = 0; i < bookSize; i++)
-//		if (book[i] == '\n')
-//			book[i] = '\0';
 }
 
 void ethernetHandler(void)

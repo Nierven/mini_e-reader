@@ -9,6 +9,7 @@
 static void displayBook(void);
 
 static uint8_t visibleLayer;
+static uint16_t bookWidth = 0;
 
 void initScreen(void)
 {
@@ -38,7 +39,9 @@ void initScreen(void)
 	BSP_LCD_SetFont(textFont);
 
 	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+
 	visibleLayer = 0;
+	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 }
 
 void displayerHandler(void)
@@ -61,7 +64,7 @@ void displayerHandler(void)
 	//osDelayUntil(&wakeTime, 34); // 30 FPS
 }
 
-static void displayLine(int start, int len, int space, int at);
+static void displayLine(int start, int letters, int spaces, int space, uint8_t correction, int at);
 static uint32_t pos = 0;
 
 static void displayBook(void)
@@ -78,14 +81,14 @@ static void displayBook(void)
 	int spacesCounter = 0;
 
 	const int minSpace = round(0.7 * textFont->Width);
-	const int maxSpace = round(3.0 * textFont->Width);
+	const int maxSpace = round(2.0 * textFont->Width);
 
 	for (int i = pos; i < bookSize - pos; i++)
 	{
 		if (book[i] == ' ' || book[i] == '\n')
 		{
 			// Get the optimal space length according to how many letters and space we have
-			int actualOptimalSpace = BSP_LCD_GetXSize() - lettersCounter * textFont->Width;
+			int actualOptimalSpace = bookWidth - lettersCounter * textFont->Width;
 			if (spacesCounter != 0) actualOptimalSpace /= spacesCounter;
 
 			if (actualOptimalSpace < minSpace) // If too small, then discard the last word and compute the best length
@@ -93,8 +96,8 @@ static void displayBook(void)
 				lettersCounter -= wordLettersCounter;
 				spacesCounter--;
 
-				actualOptimalSpace = (BSP_LCD_GetXSize() - lettersCounter * textFont->Width) / spacesCounter;
-				displayLine(currentLinePos, lettersCounter + spacesCounter, actualOptimalSpace, currentLine);
+				actualOptimalSpace = (bookWidth - lettersCounter * textFont->Width) / spacesCounter;
+				displayLine(currentLinePos, lettersCounter, spacesCounter, actualOptimalSpace, 1, currentLine);
 
 				currentLinePos = currentLinePos + lettersCounter + spacesCounter + 1;
 				i = currentLinePos - 1;
@@ -108,9 +111,9 @@ static void displayBook(void)
 			else if (book[i] == '\n')
 			{
 				if (actualOptimalSpace > maxSpace)
-					actualOptimalSpace = 1;
+					actualOptimalSpace = textFont->Width;
 
-				displayLine(currentLinePos, i - currentLinePos, actualOptimalSpace, currentLine);
+				displayLine(currentLinePos, lettersCounter, spacesCounter, actualOptimalSpace, 0, currentLine);
 
 				currentLinePos = i+1;
 				if (++currentLine == charMaxHeight)
@@ -134,20 +137,30 @@ static void displayBook(void)
 	}
 }
 
-static void displayLine(int start, int len, int space, int at)
+static void displayLine(int start, int letters, int spaces, int space, uint8_t correction, int at)
 {
-	int current_x = 0;
+	int current_x = BOOK_MARGIN;
 	uint8_t word[50];
 	int currentPos = start;
 
-	for (int i = start; i < start + len + 1; i++)
+	int error = 0; int pxPerSpace = 0; int pxPerFirstSpaces = 0; int pxCounter = 0;
+
+	if (correction && spaces > 0)
 	{
-		if (i == start + len || book[i] == ' ')
+		error = bookWidth - letters * textFont->Width - spaces * space;
+		pxPerSpace = error / spaces; pxPerFirstSpaces = error % spaces;
+		pxCounter = 0;
+	}
+
+	for (int i = start; i < start + letters + spaces + 1; i++)
+	{
+		if (i == start + letters + spaces || book[i] == ' ')
 		{
 			memcpy(word, book + currentPos, i - currentPos); word[i - currentPos] = '\0';
 
 			BSP_LCD_DisplayStringAt(current_x, at * textFont->Height, (uint8_t*) word, LEFT_MODE);
-			current_x += (i - currentPos) * textFont->Width + space;
+			current_x += (i - currentPos) * textFont->Width + space + pxPerSpace;
+			if (pxCounter++ < pxPerFirstSpaces) current_x += 1;
 			currentPos = i+1;
 		}
 	}
