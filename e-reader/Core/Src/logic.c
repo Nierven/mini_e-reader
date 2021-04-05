@@ -45,12 +45,23 @@ void logicHandler(void)
 		}
 		case Move:
 		{
-			int32_t dy = actualThumbState.y - lastThumbState.y;
-			cumulated_dy += dy;
+			int32_t dy = actualThumbState.y - lastThumbState.y; cumulated_dy += dy;
+			int16_t dline = cumulated_dy / textFont->Height;
+			cumulated_dy %= textFont->Height;
 
-			if (abs(cumulated_dy) > textFont->Height)
+			if (bookLineOffset - dline > book.linesSize - 1)
+				dline = bookLineOffset - book.linesSize + 1;
+			else if (bookLineOffset - dline < 0)
+				dline = bookLineOffset;
+
+			if (dline != 0)
 			{
-				cumulated_dy %= textFont->Height;
+				// Wait for the ui to be available
+				if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+				{
+					bookLineOffset -= dline;
+					xSemaphoreGive(semaphore_ui);
+				}
 			}
 
 			if (mainToolbar.isVisible)

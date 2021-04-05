@@ -13,7 +13,7 @@ void drawToolbar(Toolbar *toolbar)
 	BSP_LCD_FillRect(toolbar->x + toolbar->radius, toolbar->y, toolbar->w - 2*toolbar->radius, toolbar->h);
 	BSP_LCD_FillRect(toolbar->x, toolbar->y + toolbar->radius, toolbar->w, toolbar->h - 2*toolbar->radius);
 
-	for (int i = 0; i < toolbar->size; i++)
+	for (uint8_t i = 0; i < toolbar->size; i++)
 	{
 		ToolbarButton *b = toolbar->buttons[i];
 
@@ -34,7 +34,7 @@ void drawToolbar(Toolbar *toolbar)
 
 void toolbar_OnHover(Toolbar *toolbar, int32_t x, int32_t y)
 {
-	for (int i = 0; i < toolbar->size; i++)
+	for (uint8_t i = 0; i < toolbar->size; i++)
 	{
 		ToolbarButton *b = toolbar->buttons[i];
 		b->isHovered = b->isEnabled &&
@@ -45,7 +45,7 @@ void toolbar_OnHover(Toolbar *toolbar, int32_t x, int32_t y)
 
 void toolbar_OnClick(Toolbar *toolbar, int32_t x, int32_t y)
 {
-	for (int i = 0; i < toolbar->size; i++)
+	for (uint8_t i = 0; i < toolbar->size; i++)
 	{
 		ToolbarButton *b = toolbar->buttons[i];
 		if (b->isEnabled &&

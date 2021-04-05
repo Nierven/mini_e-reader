@@ -26,6 +26,8 @@ extern uint16_t charMaxWidth;
 extern uint16_t charMaxHeight;
 extern sFONT *textFont;
 
+extern int32_t bookLineOffset;
+
 extern Toolbar mainToolbar;
 
 void initUI(void);

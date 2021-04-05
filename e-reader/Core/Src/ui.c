@@ -11,6 +11,7 @@ uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
 
+int32_t bookLineOffset = 5;
 static uint16_t bookWidth = 0;
 
 void initUI(void)
@@ -108,6 +109,8 @@ void zoomInButton_OnClick(ToolbarButton *button)
 	// Wait for the ui to be available
 	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
+		int32_t actualFirstIndex = book.lines[bookLineOffset].index;
+
 		int newFontSize = getFont() + 4;
 		setFont(newFontSize);
 
@@ -117,8 +120,21 @@ void zoomInButton_OnClick(ToolbarButton *button)
 		if (!zoomOutButton.isEnabled)
 			zoomOutButton.isEnabled = 1;
 
-		bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 		buildBook(bookWidth, textFont->Width);
+
+		// Search for the first word shown using the previous zoom level
+		for (int32_t i = bookLineOffset; i < book.linesSize; i++)
+		{
+			if (book.lines[i].index <= actualFirstIndex &&
+				book.lines[i].index + book.lines[i].length > actualFirstIndex)
+			{
+				bookLineOffset = i;
+				break;
+			}
+
+			int a = 0;
+			a++;
+		}
 
 		xSemaphoreGive(semaphore_ui);
 	}
@@ -129,6 +145,8 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 	// Wait for the ui to be available
 	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
+		int32_t actualFirstIndex = book.lines[bookLineOffset].index;
+
 		int newFontSize = getFont() - 4;
 		setFont(newFontSize);
 
@@ -138,8 +156,18 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 		if (!zoomInButton.isEnabled)
 			zoomInButton.isEnabled = 1;
 
-		bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 		buildBook(bookWidth, textFont->Width);
+
+		// Search for the first word shown using the previous zoom level
+		int32_t start = bookLineOffset < book.linesSize ? bookLineOffset : book.linesSize - 1;
+		for (int32_t i = start; i >= 0; i--)
+		{
+			if (book.lines[i].index <= actualFirstIndex)
+			{
+				bookLineOffset = i;
+				break;
+			}
+		}
 
 		xSemaphoreGive(semaphore_ui);
 	}

@@ -70,19 +70,20 @@ void displayBook(void)
 	BSP_LCD_SetTextColor(textColor);
 	BSP_LCD_SetFont(textFont);
 
-	for (int i = 0; i < book.linesSize && i < charMaxHeight; i++)
-		displayLine(&book.lines[i], i);
+	int32_t len = (book.linesSize - bookLineOffset < charMaxHeight) ? book.linesSize - bookLineOffset : charMaxHeight;
+	for (int32_t i = bookLineOffset; i < bookLineOffset + len; i++)
+		displayLine(&book.lines[i], i - bookLineOffset);
 }
 
 void displayLine(Line *line, int at)
 {
-	int current_x = BOOK_MARGIN;
-	int currentIndex = line->index;
-	int pxCounter = 0;
+	int16_t current_x = BOOK_MARGIN;
+	int32_t currentIndex = line->index;
+	int8_t pxCounter = 0;
 
 	char word[50] = "";
 
-	for (int i = line->index; i < line->index + line->length + 1; i++)
+	for (int32_t i = line->index; i < line->index + line->length + 1; i++)
 	{
 		if (i == line->index + line->length || book.text[i - book.offset] == ' ')
 		{
