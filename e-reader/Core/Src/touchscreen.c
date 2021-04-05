@@ -102,6 +102,5 @@ uint8_t isClick(ThumbInfo down, ThumbInfo up)
 {
 	return abs(up.x - down.x) < 100 &&
 		   abs(up.y - down.y) < 100 &&
-		   up.t - down.t > 5 &&
-		   up.t - down.t < 500;
+		   up.t - down.t > 10;
 }

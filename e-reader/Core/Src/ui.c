@@ -11,7 +11,7 @@ uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
 
-int32_t bookLineOffset = 5;
+int32_t bookLineOffset = 0;
 static uint16_t bookWidth = 0;
 
 void initUI(void)

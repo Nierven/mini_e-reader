@@ -45,32 +45,31 @@ void logicHandler(void)
 		}
 		case Move:
 		{
-			int32_t dy = actualThumbState.y - lastThumbState.y; cumulated_dy += dy;
-			int16_t dline = cumulated_dy / textFont->Height;
-			cumulated_dy %= textFont->Height;
-
-			if (bookLineOffset - dline > book.linesSize - 1)
-				dline = bookLineOffset - book.linesSize + 1;
-			else if (bookLineOffset - dline < 0)
-				dline = bookLineOffset;
-
-			if (dline != 0)
+			if (mainToolbar.isVisible && lastThumbState.x > mainToolbar.x && lastThumbState.x < mainToolbar.x + mainToolbar.w &&
+					                     lastThumbState.y > mainToolbar.y && lastThumbState.y < mainToolbar.y + mainToolbar.h)
 			{
-				// Wait for the ui to be available
-				if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
-				{
-					bookLineOffset -= dline;
-					xSemaphoreGive(semaphore_ui);
-				}
+				toolbarLastActivityTime = xTaskGetTickCount();
+				toolbar_OnHover(&mainToolbar, lastThumbState.x, lastThumbState.y);
 			}
-
-			if (mainToolbar.isVisible)
+			else
 			{
-				if (lastThumbState.x > mainToolbar.x && lastThumbState.x < mainToolbar.x + mainToolbar.w &&
-					lastThumbState.y > mainToolbar.y && lastThumbState.y < mainToolbar.y + mainToolbar.h)
+				int32_t dy = actualThumbState.y - lastThumbState.y; cumulated_dy += dy;
+				int16_t dline = cumulated_dy / textFont->Height;
+				cumulated_dy %= textFont->Height;
+
+				if (bookLineOffset - dline > book.linesSize - 1)
+					dline = bookLineOffset - book.linesSize + 1;
+				else if (bookLineOffset - dline < 0)
+					dline = bookLineOffset;
+
+				if (dline != 0)
 				{
-					toolbarLastActivityTime = xTaskGetTickCount();
-					toolbar_OnHover(&mainToolbar, lastThumbState.x, lastThumbState.y);
+					// Wait for the ui to be available
+					if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+					{
+						bookLineOffset -= dline;
+						xSemaphoreGive(semaphore_ui);
+					}
 				}
 			}
 
