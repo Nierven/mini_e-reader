@@ -4,12 +4,12 @@
 #include "displayer.h"
 #include "ethernet.h"
 #include "toolbar.h"
+#include "book.h"
 #include "ui.h"
 
 static void displayBook(void);
-
+static void displayLine(Line *line, int at);
 static uint8_t visibleLayer;
-static uint16_t bookWidth = 0;
 
 void initScreen(void)
 {
@@ -21,8 +21,7 @@ void initScreen(void)
 	BSP_LCD_SetLayerVisible(0, DISABLE);
 	BSP_LCD_SetLayerVisible(1, ENABLE);
 
-	setFont(12);
-	initMainToolbar();
+	initUI();
 
 	// Init first layer
 	BSP_LCD_SelectLayer(0);
@@ -39,129 +38,60 @@ void initScreen(void)
 	BSP_LCD_SetFont(textFont);
 
 	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-
-	visibleLayer = 0;
-	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
+	visibleLayer = 1;
 }
 
 void displayerHandler(void)
 {
-//	TickType_t wakeTime = xTaskGetTickCount();
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, (TickType_t) 10) == pdTRUE)
+	{
+		// Screen reset
+		BSP_LCD_Clear(backColor);
 
-	// Screen reset
-	BSP_LCD_Clear(backColor);
+		displayBook();
+		drawToolbar(&mainToolbar);
 
-	displayBook();
-	drawToolbar(&mainToolbar);
+		// Swap the layers (double buffering)
+		while (!(LTDC->CDSR & LTDC_CDSR_VSYNCS)); // VSYNC
+		BSP_LCD_SetLayerVisible(visibleLayer, DISABLE); visibleLayer ^= 1;
+		BSP_LCD_SetLayerVisible(visibleLayer, ENABLE);
+		BSP_LCD_SelectLayer(1 - visibleLayer);
 
-	// Swap the layers (double buffering)
-	while (!(LTDC->CDSR & LTDC_CDSR_VSYNCS)); // VSYNC
-	BSP_LCD_SetLayerVisible(visibleLayer, DISABLE); visibleLayer ^= 1;
-	BSP_LCD_SetLayerVisible(visibleLayer, ENABLE);
-	BSP_LCD_SelectLayer(1 - visibleLayer);
+		xSemaphoreGive(semaphore_ui);
+	}
 
 	osDelay(30);
-	//osDelayUntil(&wakeTime, 34); // 30 FPS
 }
 
-static void displayLine(int start, int letters, int spaces, int space, uint8_t correction, int at);
-static uint32_t pos = 0;
-
-static void displayBook(void)
+void displayBook(void)
 {
 	BSP_LCD_SetBackColor(backColor);
 	BSP_LCD_SetTextColor(textColor);
 	BSP_LCD_SetFont(textFont);
 
-	uint8_t currentLine = 0;
-	int currentLinePos = pos;
-
-	int lettersCounter = 0;
-	int wordLettersCounter = 0;
-	int spacesCounter = 0;
-
-	const int minSpace = round(0.7 * textFont->Width);
-	const int maxSpace = round(2.0 * textFont->Width);
-
-	for (int i = pos; i < bookSize - pos; i++)
-	{
-		if (book[i] == ' ' || book[i] == '\n')
-		{
-			// Get the optimal space length according to how many letters and space we have
-			int actualOptimalSpace = bookWidth - lettersCounter * textFont->Width;
-			if (spacesCounter != 0) actualOptimalSpace /= spacesCounter;
-
-			if (actualOptimalSpace < minSpace) // If too small, then discard the last word and compute the best length
-			{
-				lettersCounter -= wordLettersCounter;
-				spacesCounter--;
-
-				actualOptimalSpace = (bookWidth - lettersCounter * textFont->Width) / spacesCounter;
-				displayLine(currentLinePos, lettersCounter, spacesCounter, actualOptimalSpace, 1, currentLine);
-
-				currentLinePos = currentLinePos + lettersCounter + spacesCounter + 1;
-				i = currentLinePos - 1;
-				if (++currentLine == charMaxHeight)
-					break;
-
-				lettersCounter = 0;
-				wordLettersCounter = 0;
-				spacesCounter = 0;
-			}
-			else if (book[i] == '\n')
-			{
-				if (actualOptimalSpace > maxSpace)
-					actualOptimalSpace = textFont->Width;
-
-				displayLine(currentLinePos, lettersCounter, spacesCounter, actualOptimalSpace, 0, currentLine);
-
-				currentLinePos = i+1;
-				if (++currentLine == charMaxHeight)
-					break;
-
-				lettersCounter = 0;
-				wordLettersCounter = 0;
-				spacesCounter = 0;
-			}
-			else
-			{
-				spacesCounter++;
-				wordLettersCounter = 0;
-			}
-		}
-		else
-		{
-			wordLettersCounter++;
-			lettersCounter++;
-		}
-	}
+	for (int i = 0; i < book.linesSize && i < charMaxHeight; i++)
+		displayLine(&book.lines[i], i);
 }
 
-static void displayLine(int start, int letters, int spaces, int space, uint8_t correction, int at)
+void displayLine(Line *line, int at)
 {
 	int current_x = BOOK_MARGIN;
-	uint8_t word[50];
-	int currentPos = start;
+	int currentIndex = line->index;
+	int pxCounter = 0;
 
-	int error = 0; int pxPerSpace = 0; int pxPerFirstSpaces = 0; int pxCounter = 0;
+	char word[50] = "";
 
-	if (correction && spaces > 0)
+	for (int i = line->index; i < line->index + line->length + 1; i++)
 	{
-		error = bookWidth - letters * textFont->Width - spaces * space;
-		pxPerSpace = error / spaces; pxPerFirstSpaces = error % spaces;
-		pxCounter = 0;
-	}
-
-	for (int i = start; i < start + letters + spaces + 1; i++)
-	{
-		if (i == start + letters + spaces || book[i] == ' ')
+		if (i == line->index + line->length || book.text[i - book.offset] == ' ')
 		{
-			memcpy(word, book + currentPos, i - currentPos); word[i - currentPos] = '\0';
+			memcpy(word, book.text - book.offset + currentIndex, i - currentIndex); word[i - currentIndex] = '\0';
 
 			BSP_LCD_DisplayStringAt(current_x, at * textFont->Height, (uint8_t*) word, LEFT_MODE);
-			current_x += (i - currentPos) * textFont->Width + space + pxPerSpace;
-			if (pxCounter++ < pxPerFirstSpaces) current_x += 1;
-			currentPos = i+1;
+			current_x += (i - currentIndex) * textFont->Width + line->spaceSize + line->additionalPixelPerSpace;
+			if (pxCounter++ < line->additionalPixelPerFirstSpaces) current_x += 1;
+			currentIndex = i+1;
 		}
 	}
 }

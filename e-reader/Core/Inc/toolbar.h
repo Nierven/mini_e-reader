@@ -6,6 +6,8 @@
 #include "stm32746g_discovery_ts.h"
 #include <string.h>
 
+#define TOOLBAR_HOVER_BOX_MARGIN 2
+
 typedef struct ToolbarButton_t
 {
 	int32_t x;
@@ -38,10 +40,7 @@ typedef struct Toolbar_t
 	int32_t h;
 } Toolbar;
 
-void openToolbar(Toolbar *toolbar);
 void drawToolbar(Toolbar *toolbar);
-void closeToolbar(Toolbar *toolbar);
-
 void toolbar_OnHover(Toolbar *toolbar, int32_t x, int32_t y);
 void toolbar_OnClick(Toolbar *toolbar, int32_t x, int32_t y);
 

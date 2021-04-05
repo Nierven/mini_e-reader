@@ -1,12 +1,8 @@
 #include "ui.h"
 #include "logos.h"
+#include "book.h"
 
-static ToolbarButton *toolbarButtons[TOOLBAR_SIZE];
-static ToolbarButton zoomInButton;
-static ToolbarButton zoomOutButton;
-static ToolbarButton contrastButton;
-static ToolbarButton orientationButton;
-static ToolbarButton bookListButton;
+SemaphoreHandle_t semaphore_ui;
 
 uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
@@ -14,6 +10,20 @@ uint32_t textColor = LCD_COLOR_BLACK;
 uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
+
+static uint16_t bookWidth = 0;
+
+void initUI(void)
+{
+	setFont(12);
+	initMainToolbar();
+
+	initBook();
+	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
+	buildBook(bookWidth, textFont->Width);
+
+	semaphore_ui = xSemaphoreCreateMutex();
+}
 
 int getFont(void)
 {
@@ -29,6 +39,13 @@ void setFont(int fontSize)
 }
 
 Toolbar mainToolbar;
+
+static ToolbarButton *toolbarButtons[TOOLBAR_SIZE];
+static ToolbarButton zoomInButton;
+static ToolbarButton zoomOutButton;
+static ToolbarButton contrastButton;
+static ToolbarButton orientationButton;
+static ToolbarButton bookListButton;
 
 static void zoomInButton_OnClick(ToolbarButton *button);
 static void zoomOutButton_OnClick(ToolbarButton *button);
@@ -88,33 +105,57 @@ void initMainToolbar(void)
 
 void zoomInButton_OnClick(ToolbarButton *button)
 {
-	int newFontSize = getFont() + 4;
-	setFont(newFontSize);
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+	{
+		int newFontSize = getFont() + 4;
+		setFont(newFontSize);
 
-	if (newFontSize == 24)
-		button->isEnabled = 0;
+		if (newFontSize == 24)
+			button->isEnabled = 0;
 
-	if (!zoomOutButton.isEnabled)
-		zoomOutButton.isEnabled = 1;
+		if (!zoomOutButton.isEnabled)
+			zoomOutButton.isEnabled = 1;
+
+		bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
+		buildBook(bookWidth, textFont->Width);
+
+		xSemaphoreGive(semaphore_ui);
+	}
 }
 
 void zoomOutButton_OnClick(ToolbarButton *button)
 {
-	int newFontSize = getFont() - 4;
-	setFont(newFontSize);
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+	{
+		int newFontSize = getFont() - 4;
+		setFont(newFontSize);
 
-	if (newFontSize == 8)
-		button->isEnabled = 0;
+		if (newFontSize == 8)
+			button->isEnabled = 0;
 
-	if (!zoomInButton.isEnabled)
-		zoomInButton.isEnabled = 1;
+		if (!zoomInButton.isEnabled)
+			zoomInButton.isEnabled = 1;
+
+		bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
+		buildBook(bookWidth, textFont->Width);
+
+		xSemaphoreGive(semaphore_ui);
+	}
 }
 
 void contrastButton_OnClick(ToolbarButton *button)
 {
-	highContrast ^= 1;
-	backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
-	textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+	{
+		highContrast ^= 1;
+		backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
+		textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
+
+		xSemaphoreGive(semaphore_ui);
+	}
 }
 
 void orientationButton_OnClick(ToolbarButton *button)

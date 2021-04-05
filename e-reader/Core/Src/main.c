@@ -129,7 +129,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-   HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -188,7 +188,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 4096);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of ethernet_task */
@@ -196,11 +196,11 @@ int main(void)
   ethernet_taskHandle = osThreadCreate(osThread(ethernet_task), NULL);
 
   /* definition and creation of displayer_task */
-  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 128);
+  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
   displayer_taskHandle = osThreadCreate(osThread(displayer_task), NULL);
 
   /* definition and creation of logic_task */
-  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 128);
+  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 2048);
   logic_taskHandle = osThreadCreate(osThread(logic_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */

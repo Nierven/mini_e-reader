@@ -1,7 +1,10 @@
 #include "logic.h"
 #include "touchscreen.h"
 #include "toolbar.h"
+#include "book.h"
 #include "ui.h"
+
+static int32_t cumulated_dy = 0;
 
 void initLogic(void)
 {
@@ -11,6 +14,9 @@ void initLogic(void)
 void logicHandler(void)
 {
 	static TickType_t toolbarLastActivityTime = 0;
+
+	// Reset toolbar hovering, which is only visual
+	toolbar_OnHover(&mainToolbar, 0, 0);
 
 	switch (getTouchscreenEvent())
 	{
@@ -39,6 +45,14 @@ void logicHandler(void)
 		}
 		case Move:
 		{
+			int32_t dy = actualThumbState.y - lastThumbState.y;
+			cumulated_dy += dy;
+
+			if (abs(cumulated_dy) > textFont->Height)
+			{
+				cumulated_dy %= textFont->Height;
+			}
+
 			if (mainToolbar.isVisible)
 			{
 				if (lastThumbState.x > mainToolbar.x && lastThumbState.x < mainToolbar.x + mainToolbar.w &&
@@ -46,10 +60,6 @@ void logicHandler(void)
 				{
 					toolbarLastActivityTime = xTaskGetTickCount();
 					toolbar_OnHover(&mainToolbar, lastThumbState.x, lastThumbState.y);
-				}
-				else
-				{
-					mainToolbar.isVisible = 0;
 				}
 			}
 
@@ -64,5 +74,5 @@ void logicHandler(void)
 	if (mainToolbar.isVisible && (xTaskGetTickCount() - toolbarLastActivityTime) > TOOLBAR_MAX_INACTIVITY_TIME)
 		mainToolbar.isVisible = 0;
 
-	osDelay(15);
+	osDelay(10);
 }

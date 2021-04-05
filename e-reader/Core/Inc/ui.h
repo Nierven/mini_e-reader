@@ -6,15 +6,7 @@
 #include "stm32746g_discovery_ts.h"
 #include "toolbar.h"
 
-extern uint8_t highContrast;
-extern uint32_t textColor;
-extern uint32_t backColor;
-extern uint16_t charMaxWidth;
-extern uint16_t charMaxHeight;
-extern sFONT *textFont;
-
-int getFont(void);
-void setFont(int fontSize);
+#define BOOK_MARGIN 20
 
 #define TOOLBAR_MAX_INACTIVITY_TIME 3000
 #define TOOLBAR_SIZE 5
@@ -25,7 +17,20 @@ void setFont(int fontSize);
 #define BUTTON_WIDTH 36
 #define BUTTON_HEIGHT 36
 
-void initMainToolbar(void);
+extern SemaphoreHandle_t semaphore_ui;
+
+extern uint8_t highContrast;
+extern uint32_t textColor;
+extern uint32_t backColor;
+extern uint16_t charMaxWidth;
+extern uint16_t charMaxHeight;
+extern sFONT *textFont;
+
 extern Toolbar mainToolbar;
+
+void initUI(void);
+int getFont(void);
+void setFont(int fontSize);
+void initMainToolbar(void);
 
 #endif // UI_H

@@ -1,10 +1,5 @@
 #include "toolbar.h"
 
-void openToolbar(Toolbar *toolbar)
-{
-
-}
-
 void drawToolbar(Toolbar *toolbar)
 {
 	if (!toolbar->isVisible)
@@ -21,10 +16,13 @@ void drawToolbar(Toolbar *toolbar)
 	for (int i = 0; i < toolbar->size; i++)
 	{
 		ToolbarButton *b = toolbar->buttons[i];
+
 		if (b->isHovered)
 		{
-			BSP_LCD_SetTextColor(0xFF202020);
-			BSP_LCD_FillRect(b->x, b->y, toolbar->buttonWidth, toolbar->buttonHeight);
+			BSP_LCD_SetTextColor(0xFF2196F3);
+			BSP_LCD_FillRect(b->x - TOOLBAR_HOVER_BOX_MARGIN, b->y - TOOLBAR_HOVER_BOX_MARGIN,
+					         toolbar->buttonWidth + 2*TOOLBAR_HOVER_BOX_MARGIN,
+							 toolbar->buttonHeight + 2*TOOLBAR_HOVER_BOX_MARGIN);
 		}
 
 		if (b->icon != NULL)
@@ -32,11 +30,6 @@ void drawToolbar(Toolbar *toolbar)
 			BSP_LCD_DrawBitmap(b->x, b->y, b->icon);
 		}
 	}
-}
-
-void closeToolbar(Toolbar *toolbar)
-{
-	toolbar->isVisible = 0;
 }
 
 void toolbar_OnHover(Toolbar *toolbar, int32_t x, int32_t y)
