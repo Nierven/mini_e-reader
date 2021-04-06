@@ -17,7 +17,7 @@
 #define BUTTON_WIDTH 36
 #define BUTTON_HEIGHT 36
 
-#define SCROLLBAR_WIDTH 5
+#define SCROLLBAR_WIDTH 4
 
 extern SemaphoreHandle_t semaphore_ui;
 

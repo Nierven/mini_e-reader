@@ -46,7 +46,7 @@ void drawToolbar(Toolbar *toolbar)
 
 		if (b->icon != NULL)
 		{
-			BSP_LCD_DrawBitmap(b->x, b->y, b->icon);
+			BSP_LCD_DrawBitmap(b->x, b->y, !b->isEnabled, b->icon);
 		}
 	}
 
