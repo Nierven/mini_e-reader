@@ -25,6 +25,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "lwip/api.h"
+#include <string.h>
+
 #include "ethernet.h"
 #include "logic.h"
 #include "displayer.h"
@@ -170,8 +173,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   initEthernet();
-  initLogic();
-  initScreen();
+
+  BSP_LCD_Init();
+  	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+  	BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS + BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 4);
+
+  	BSP_LCD_DisplayOn();
+  	BSP_LCD_SetLayerVisible(0, DISABLE);
+  	BSP_LCD_SetLayerVisible(1, ENABLE);
+
+  	// Init second layer
+  	BSP_LCD_SelectLayer(1);
+  	BSP_LCD_Clear(LCD_COLOR_BLACK);
+  	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+  	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+  	BSP_LCD_SetFont(&Font16);
+
+  	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+  	BSP_LCD_DisplayStringAtLine(0, (uint8_t*) "Booted.");
+//  initLogic();
+//  initScreen();
 
   /* USER CODE END 2 */
 
@@ -193,7 +214,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of ethernet_task */
@@ -201,12 +222,12 @@ int main(void)
   ethernet_taskHandle = osThreadCreate(osThread(ethernet_task), NULL);
 
   /* definition and creation of displayer_task */
-  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
-  displayer_taskHandle = osThreadCreate(osThread(displayer_task), NULL);
+//  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
+//  displayer_taskHandle = osThreadCreate(osThread(displayer_task), NULL);
 
   /* definition and creation of logic_task */
-  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 2048);
-  logic_taskHandle = osThreadCreate(osThread(logic_task), NULL);
+//  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 2048);
+//  logic_taskHandle = osThreadCreate(osThread(logic_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1410,6 +1431,94 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+static void udp_reception_thread(void *arg)
+{
+	err_t err, recv_err;
+	uint8_t addr_recue[4];
+	uint32_t addr_uint;
+	char text[50];
+
+	static struct netconn *conn;
+	static struct netbuf *buf;
+	static ip_addr_t *addr;
+	static unsigned short port;
+
+	LWIP_UNUSED_ARG(arg);
+
+	conn = netconn_new(NETCONN_UDP);
+	if (conn != NULL)
+	{
+		err = netconn_bind(conn, IP_ADDR_ANY, 8080);
+		if (err == ERR_OK)
+		{
+			while (1)
+			{
+				recv_err = netconn_recv(conn, &buf);
+				if (recv_err == ERR_OK)
+				{
+					addr = netbuf_fromaddr(buf);
+					addr_uint = (uint32_t) addr->addr;
+					port = netbuf_fromport(buf);
+					addr_recue[0] = (addr_uint & 0xFF000000) >> 24;
+					addr_recue[1] = (addr_uint & 0x00FF0000) >> 16;
+					addr_recue[2] = (addr_uint & 0x0000FF00) >> 8;
+					addr_recue[3] = (addr_uint & 0x000000FF);
+
+					sprintf(text, "adresse de l'emetteur : %d.%d.%d.%d", addr_recue[3], addr_recue[2], addr_recue[1], addr_recue[0]);
+					BSP_LCD_DisplayStringAtLine(3,  (uint8_t*) text);
+
+					sprintf(text, "port de l'emetteur : %d", netbuf_fromport(buf));
+					BSP_LCD_DisplayStringAtLine(4,  (uint8_t*) text);
+
+					netbuf_copy(buf, text, netbuf_len(buf));
+					text[netbuf_len(buf)] = 0;
+					BSP_LCD_DisplayStringAtLine(5,  (uint8_t*) text);
+
+//					netconn_connect(conn, addr, port);
+//					buf->addr.addr = 0;
+//					netconn_send(conn, buf);
+					netbuf_delete(buf);
+				}
+			}
+		}
+		else
+		{
+			netconn_delete(conn);
+		}
+	}
+}
+
+static void ethernet_client(void *arg)
+{
+	static int i = 0;
+	uint8_t addr_dest[4] = { 169, 254, 61, 201 };
+	uint32_t a;
+	char text[50] = "";
+
+	static struct netconn *conn_emission;
+	static struct netbuf *buf;
+	static ip_addr_t *addr;
+	static unsigned short port_dest = 8081;
+
+	addr = &a;
+	addr->addr = ((uint32_t) addr_dest[3] << 24) + ((uint32_t) addr_dest[2] << 16) + ((uint32_t) addr_dest[1] << 8) + ((uint32_t) addr_dest[0]);
+	conn_emission = netconn_new(NETCONN_UDP);
+	buf = netbuf_new();
+
+	for (;;)
+	{
+		sprintf(text, "%4d", i++);
+		BSP_LCD_DisplayStringAtLine(10, (uint8_t*) text);
+
+		netbuf_ref(buf, text, strlen(text));
+		netconn_connect(conn_emission, addr, port_dest);
+		//buf->addr.addr = 0;
+		netconn_send(conn_emission, buf);
+		netbuf_delete(buf);
+		osDelay(1000);
+	}
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1424,10 +1533,14 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
+	BSP_LCD_DisplayStringAtLine(1, (uint8_t*) "Initialized.");
+  sys_thread_new("udp_reception_thread", udp_reception_thread, NULL, DEFAULT_THREAD_STACKSIZE, 4);
+//  sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin);
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }
