@@ -37,7 +37,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+extern ETH_HandleTypeDef heth;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
