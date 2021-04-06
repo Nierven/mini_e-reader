@@ -12,7 +12,6 @@ typedef struct
 	int8_t length;
 
 	int8_t spaceSize;
-	int8_t additionalPixelPerSpace;
 	int8_t additionalPixelPerFirstSpaces;
 } Line;
 

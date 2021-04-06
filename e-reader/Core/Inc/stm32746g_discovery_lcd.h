@@ -218,6 +218,7 @@ void     BSP_LCD_ClearStringLine(uint32_t Line);
 void     BSP_LCD_DisplayStringAtLine(uint16_t Line, uint8_t *ptr);
 void     BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode);
 void     BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
+void     BSP_LCD_DisplayCharWithoutBackground(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
 
 void     BSP_LCD_DrawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
 void     BSP_LCD_DrawVLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);

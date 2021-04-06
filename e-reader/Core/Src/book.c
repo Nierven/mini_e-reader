@@ -51,18 +51,17 @@ void buildBook(uint16_t width, uint16_t charWidth)
 
 				// Compute the best length and the error and its adjustements
 				actualOptimalSpace = (width - lettersCounter * charWidth) / spacesCounter;
-				int8_t error = 0; int8_t pxPerSpace = 0; int8_t pxPerFirstSpaces = 0;
+				int8_t error = 0; int8_t pxPerFirstSpaces = 0;
 				if (spacesCounter > 0)
 				{
 					error = width - lettersCounter * charWidth - spacesCounter * actualOptimalSpace;
-					pxPerSpace = error / spacesCounter; pxPerFirstSpaces = error % spacesCounter;
+					pxPerFirstSpaces = error % spacesCounter;
 				}
 
 				// Register the new line
 			 	book.lines[currentLineNb].index = currentLineIndex;
 			 	book.lines[currentLineNb].length = lettersCounter + spacesCounter;
 			 	book.lines[currentLineNb].spaceSize = actualOptimalSpace;
-				book.lines[currentLineNb].additionalPixelPerSpace = pxPerSpace;
 				book.lines[currentLineNb].additionalPixelPerFirstSpaces = pxPerFirstSpaces;
 				currentLineNb++;
 
@@ -85,7 +84,6 @@ void buildBook(uint16_t width, uint16_t charWidth)
 			 	book.lines[currentLineNb].index = currentLineIndex;
 			 	book.lines[currentLineNb].length = lettersCounter + spacesCounter;
 			 	book.lines[currentLineNb].spaceSize = actualOptimalSpace;
-				book.lines[currentLineNb].additionalPixelPerSpace = 0;
 				book.lines[currentLineNb].additionalPixelPerFirstSpaces = 0;
 				currentLineNb++;
 

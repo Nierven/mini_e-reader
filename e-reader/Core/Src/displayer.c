@@ -71,28 +71,27 @@ void displayBook(void)
 	BSP_LCD_SetFont(textFont);
 
 	int32_t len = (book.linesSize - bookLineOffset < charMaxHeight) ? book.linesSize - bookLineOffset : charMaxHeight;
-	for (int32_t i = bookLineOffset; i < bookLineOffset + len; i++)
-		displayLine(&book.lines[i], i - bookLineOffset);
+	for (int32_t i = 0; i < len; i++)
+		displayLine(&book.lines[i + bookLineOffset], i);
 }
 
 void displayLine(Line *line, int at)
 {
 	int16_t current_x = BOOK_MARGIN;
-	int32_t currentIndex = line->index;
 	int8_t pxCounter = 0;
 
-	char word[50] = "";
-
-	for (int32_t i = line->index; i < line->index + line->length + 1; i++)
+	for (int32_t i = line->index; i < line->index + line->length; i++)
 	{
-		if (i == line->index + line->length || book.text[i - book.offset] == ' ')
+		uint8_t c = book.text[i - book.offset];
+		if (c == ' ')
 		{
-			memcpy(word, book.text - book.offset + currentIndex, i - currentIndex); word[i - currentIndex] = '\0';
-
-			BSP_LCD_DisplayStringAt(current_x, at * textFont->Height, (uint8_t*) word, LEFT_MODE);
-			current_x += (i - currentIndex) * textFont->Width + line->spaceSize + line->additionalPixelPerSpace;
+			current_x += line->spaceSize;
 			if (pxCounter++ < line->additionalPixelPerFirstSpaces) current_x += 1;
-			currentIndex = i+1;
+		}
+		else
+		{
+			BSP_LCD_DisplayCharWithoutBackground(current_x, at * textFont->Height, c);
+			current_x += textFont->Width;
 		}
 	}
 }
