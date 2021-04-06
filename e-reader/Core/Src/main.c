@@ -48,6 +48,8 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 
+CRC_HandleTypeDef hcrc;
+
 DAC_HandleTypeDef hdac;
 
 DMA2D_HandleTypeDef hdma2d;
@@ -105,6 +107,7 @@ static void MX_UART7_Init(void);
 static void MX_FMC_Init(void);
 static void MX_DMA2D_Init(void);
 static void MX_ETH_Init(void);
+static void MX_CRC_Init(void);
 void StartDefaultTask(void const * argument);
 void ethernet_task_fn(void const * argument);
 void displayer_task_fn(void const * argument);
@@ -166,6 +169,7 @@ int main(void)
   MX_FMC_Init();
   MX_DMA2D_Init();
   MX_ETH_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
   initEthernet();
@@ -401,6 +405,37 @@ static void MX_ADC3_Init(void)
 }
 
 /**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
+}
+
+/**
   * @brief DAC Initialization Function
   * @param None
   * @retval None
@@ -498,10 +533,10 @@ static void MX_ETH_Init(void)
   heth.Init.MACAddr[0] =   0x00;
   heth.Init.MACAddr[1] =   0x80;
   heth.Init.MACAddr[2] =   0xE1;
-  heth.Init.MACAddr[3] =   0x00;
+  heth.Init.MACAddr[3] =   0xE0;
   heth.Init.MACAddr[4] =   0x00;
   heth.Init.MACAddr[5] =   0x00;
-  heth.Init.RxMode = ETH_RXPOLLING_MODE;
+  heth.Init.RxMode = ETH_RXINTERRUPT_MODE;
   heth.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
   heth.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
 
