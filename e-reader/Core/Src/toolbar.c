@@ -1,4 +1,5 @@
 #include "toolbar.h"
+#include "book.h"
 
 void drawToolbar(Toolbar *toolbar)
 {
@@ -48,6 +49,37 @@ void drawToolbar(Toolbar *toolbar)
 			BSP_LCD_DrawBitmap(b->x, b->y, b->icon);
 		}
 	}
+
+	uint8_t hasAuthor = strlen(book.author) > 0;
+
+	char firstLine[60] = "";
+	if (book.hasDate && book.publicationDate >= 0) sprintf(firstLine, "%s (%d)", book.name, book.publicationDate);
+	else if (book.hasDate && book.publicationDate < 0) sprintf(firstLine, "%s (%d BC)", book.name, abs(book.publicationDate));
+	else sprintf(firstLine, "%s", book.name);
+
+	char secondLine[60] = "";
+	if (hasAuthor) sprintf(secondLine, "by: %s", book.author);
+
+	int16_t maxLength = strlen(firstLine) * TITLEBAR_FONT.Width > strlen(secondLine) * TITLEBAR_SUBFONT.Width ?
+			strlen(firstLine) * TITLEBAR_FONT.Width :
+			strlen(secondLine) * TITLEBAR_SUBFONT.Width;
+
+	int16_t titlebarWidth = maxLength + 2*TITLEBAR_HPADDING;
+	int16_t titlebarHeight = TITLEBAR_FONT.Height + (hasAuthor ? TITLEBAR_SUBFONT.Height : 0) + 2*TITLEBAR_VPADDING;
+
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	BSP_LCD_FillCircle(titlebarWidth - TITLEBAR_RADIUS - 1, titlebarHeight - TITLEBAR_RADIUS - 1, TITLEBAR_RADIUS);
+	BSP_LCD_FillRect(0, 0, titlebarWidth - TITLEBAR_RADIUS, titlebarHeight);
+	BSP_LCD_FillRect(0, 0, titlebarWidth, titlebarHeight - TITLEBAR_RADIUS);
+
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+
+	BSP_LCD_SetFont(&TITLEBAR_FONT);
+	BSP_LCD_DisplayStringAt(TITLEBAR_HPADDING, TITLEBAR_VPADDING, (uint8_t*) firstLine, LEFT_MODE);
+
+	BSP_LCD_SetFont(&TITLEBAR_SUBFONT);
+	BSP_LCD_DisplayStringAt(TITLEBAR_HPADDING, TITLEBAR_VPADDING + TITLEBAR_FONT.Height, (uint8_t*) secondLine, LEFT_MODE);
 }
 
 void toolbar_OnHover(Toolbar *toolbar, int32_t x, int32_t y)

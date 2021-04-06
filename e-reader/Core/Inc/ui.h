@@ -17,11 +17,14 @@
 #define BUTTON_WIDTH 36
 #define BUTTON_HEIGHT 36
 
+#define SCROLLBAR_WIDTH 5
+
 extern SemaphoreHandle_t semaphore_ui;
 
 extern uint8_t highContrast;
 extern uint32_t textColor;
 extern uint32_t backColor;
+extern uint32_t scrollbarColor;
 extern uint16_t charMaxWidth;
 extern uint16_t charMaxHeight;
 extern sFONT *textFont;

@@ -7,6 +7,7 @@ SemaphoreHandle_t semaphore_ui;
 uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
 uint32_t textColor = LCD_COLOR_BLACK;
+uint32_t scrollbarColor = 0xFF909090;
 uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
@@ -181,6 +182,7 @@ void contrastButton_OnClick(ToolbarButton *button)
 		highContrast ^= 1;
 		backColor = highContrast ? LCD_COLOR_WHITE : 0xFF303030;
 		textColor = highContrast ? LCD_COLOR_BLACK : LCD_COLOR_WHITE;
+		scrollbarColor = highContrast ? 0xFF909090 : 0xFF707070;
 
 		xSemaphoreGive(semaphore_ui);
 	}

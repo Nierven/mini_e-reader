@@ -9,6 +9,7 @@
 
 static void displayBook(void);
 static void displayLine(Line *line, int at);
+static void displayScrollBar(void);
 static uint8_t visibleLayer;
 
 void initScreen(void)
@@ -50,6 +51,7 @@ void displayerHandler(void)
 		BSP_LCD_Clear(backColor);
 
 		displayBook();
+		displayScrollBar();
 		drawToolbar(&mainToolbar);
 
 		// Swap the layers (double buffering)
@@ -94,4 +96,14 @@ void displayLine(Line *line, int at)
 			current_x += textFont->Width;
 		}
 	}
+}
+
+void displayScrollBar(void)
+{
+	float mult = BSP_LCD_GetYSize() / (float) (book.linesSize + charMaxHeight - 1);
+	int16_t y = bookLineOffset * mult;
+	int16_t h = charMaxHeight * mult;
+
+	BSP_LCD_SetTextColor(scrollbarColor);
+	BSP_LCD_FillRect(0, y, SCROLLBAR_WIDTH, h + 1);
 }

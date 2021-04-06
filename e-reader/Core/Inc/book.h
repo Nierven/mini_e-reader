@@ -9,7 +9,7 @@
 typedef struct
 {
 	int32_t index;
-	int8_t length;
+	int16_t length;
 
 	int8_t spaceSize;
 	int8_t additionalPixelPerFirstSpaces;
@@ -17,6 +17,11 @@ typedef struct
 
 typedef struct
 {
+	char name[50];
+	char author[50];
+	uint8_t hasDate;
+	int16_t publicationDate;
+
 	int32_t size;
 	char text[MAX_LOADED_BOOK_SIZE];
 

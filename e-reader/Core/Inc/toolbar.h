@@ -7,11 +7,18 @@
 #include <string.h>
 
 #define TOOLBAR_HOVER_BOX_MARGIN 2
+
 #define TOOLTIP_MARGIN 25
 #define TOOLTIP_HPADDING 13
 #define TOOLTIP_VPADDING 9
 #define TOOLTIP_FONT Font16
 #define TOOLTIP_RADIUS 10
+
+#define TITLEBAR_HPADDING 13
+#define TITLEBAR_VPADDING 9
+#define TITLEBAR_RADIUS 10
+#define TITLEBAR_FONT Font16
+#define TITLEBAR_SUBFONT Font12
 
 typedef struct ToolbarButton_t
 {
