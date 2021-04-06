@@ -146,6 +146,7 @@ static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
   * @{
   */ 
 static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c);
+static void DrawCharWithoutBackground(uint16_t Xpos, uint16_t Ypos, const uint8_t *c);
 static void FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3);
 static void LL_FillBuffer(uint32_t LayerIndex, void *pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine, uint32_t ColorIndex);
 static void LL_ConvertLineToARGB8888(void * pSrc, void *pDst, uint32_t xSize, uint32_t ColorMode);
@@ -678,6 +679,20 @@ void BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
 }
 
 /**
+  * @brief  Displays one character without its background.
+  * @param  Xpos: Start column address
+  * @param  Ypos: Line where to display the character shape.
+  * @param  Ascii: Character ascii code
+  *           This parameter must be a number between Min_Data = 0x20 and Max_Data = 0x7E
+  * @retval None
+  */
+void BSP_LCD_DisplayCharWithoutBackground(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
+{
+  DrawCharWithoutBackground(Xpos, Ypos, &DrawProp[ActiveLayer].pFont->table[(Ascii-' ') *\
+    DrawProp[ActiveLayer].pFont->Height * ((DrawProp[ActiveLayer].pFont->Width + 7) / 8)]);
+}
+
+/**
   * @brief  Displays characters on the LCD.
   * @param  Xpos: X position (in pixel)
   * @param  Ypos: Y position (in pixel)   
@@ -1034,7 +1049,7 @@ void BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t RGB_Code)
   * @param  pbmp: Pointer to Bmp picture address in the internal Flash
   * @retval None
   */
-void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
+void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t masked, uint8_t *pbmp)
 {
   uint32_t index = 0, width = 0, height = 0, bit_pixel = 0, bit_pixel_byte = 0;
   uint32_t address;
@@ -1068,7 +1083,7 @@ void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
   else 
   {
     input_color_mode = CM_RGB888;
-    width += 1;
+//    width += 1;
   }
 
   /* Bypass the bitmap header */
@@ -1078,21 +1093,21 @@ void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
   for (index=0; index < height; index++)
   {
     /* Pixel format conversion */
-//	if (input_color_mode == CM_RGB888)
-//	{
-//		uint8_t *layer = (uint8_t*)(address);
-//		for (uint32_t i = 0; i < width; i++)
-//		{
+	if (masked == 1)
+	{
+		uint8_t *layer = (uint8_t*)(address);
+		for (uint32_t i = 0; i < width; i++)
+		{
 //			if (pbmp[i*bit_pixel_byte+0] + pbmp[i*bit_pixel_byte+1] + pbmp[i*bit_pixel_byte+2] != 0)
-//			{
-//				layer[i*4+0] = pbmp[i*bit_pixel_byte+0];  // BLUE
-//				layer[i*4+1] = pbmp[i*bit_pixel_byte+1];  // GREEN
-//				layer[i*4+2] = pbmp[i*bit_pixel_byte+2];  // RED
-//				layer[i*4+3] = 255;                       // ALPHA
-//			}
-//		}
-//	}
-//	else
+			{
+				layer[i*4+0] = pbmp[i*bit_pixel_byte+0] / 2;  // BLUE
+				layer[i*4+1] = pbmp[i*bit_pixel_byte+1] / 2;  // GREEN
+				layer[i*4+2] = pbmp[i*bit_pixel_byte+2] / 2;  // RED
+				layer[i*4+3] = 255;                       // ALPHA
+			}
+		}
+	}
+	else
 	{
 		LL_ConvertLineToARGB8888((uint32_t *)pbmp, (uint32_t *)address, width, input_color_mode);
 	}
@@ -1504,6 +1519,55 @@ static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
         BSP_LCD_DrawPixel((Xpos + j), Ypos, DrawProp[ActiveLayer].BackColor);
       } 
     }
+    Ypos++;
+  }
+}
+
+/**
+  * @brief  Draws a character on LCD without its background.
+  * @param  Xpos: Line where to display the character shape
+  * @param  Ypos: Start column address
+  * @param  c: Pointer to the character data
+  * @retval None
+  */
+static void DrawCharWithoutBackground(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
+{
+  uint32_t i = 0, j = 0;
+  uint16_t height, width;
+  uint8_t  offset;
+  uint8_t  *pchar;
+  uint32_t line;
+
+  height = DrawProp[ActiveLayer].pFont->Height;
+  width  = DrawProp[ActiveLayer].pFont->Width;
+
+  offset =  8 *((width + 7)/8) -  width ;
+
+  for(i = 0; i < height; i++)
+  {
+    pchar = ((uint8_t *)c + (width + 7)/8 * i);
+
+    switch(((width + 7)/8))
+    {
+
+    case 1:
+      line =  pchar[0];
+      break;
+
+    case 2:
+      line =  (pchar[0]<< 8) | pchar[1];
+      break;
+
+    case 3:
+    default:
+      line =  (pchar[0]<< 16) | (pchar[1]<< 8) | pchar[2];
+      break;
+    }
+
+    for (j = 0; j < width; j++)
+      if(line & (1 << (width- j + offset- 1)))
+        BSP_LCD_DrawPixel((Xpos + j), Ypos, DrawProp[ActiveLayer].TextColor);
+
     Ypos++;
   }
 }

@@ -27,7 +27,7 @@ TouchscreenEvent getTouchscreenEvent(void)
 		}
 		case Pressing:
 		{
-			if (actualThumbState.t - thumbDownState.t > 50)
+			if (actualThumbState.t - thumbDownState.t > 20)
 				event = Move;
 			break;
 		}
@@ -100,7 +100,7 @@ TouchscreenElementalEvent getTouchscreenElementalEvent(void)
 
 uint8_t isClick(ThumbInfo down, ThumbInfo up)
 {
-	return abs(up.x - down.x) < 100 &&
-		   abs(up.y - down.y) < 100 &&
-		   up.t - down.t > 5;
+	return abs(up.x - down.x) < 20 &&
+		   abs(up.y - down.y) < 20 &&
+		   up.t - down.t > 10;
 }

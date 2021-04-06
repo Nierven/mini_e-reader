@@ -1,8 +1,15 @@
+#include <string.h>
+#include <math.h>
+
 #include "displayer.h"
 #include "ethernet.h"
 #include "toolbar.h"
-#include "global.h"
+#include "book.h"
+#include "ui.h"
 
+static void displayBook(void);
+static void displayLine(Line *line, int at);
+static void displayScrollBar(void);
 static uint8_t visibleLayer;
 
 void initScreen(void)
@@ -15,7 +22,7 @@ void initScreen(void)
 	BSP_LCD_SetLayerVisible(0, DISABLE);
 	BSP_LCD_SetLayerVisible(1, ENABLE);
 
-	setFont(12);
+	initUI();
 
 	// Init first layer
 	BSP_LCD_SelectLayer(0);
@@ -32,49 +39,71 @@ void initScreen(void)
 	BSP_LCD_SetFont(textFont);
 
 	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-	visibleLayer = 0;
+	visibleLayer = 1;
 }
 
 void displayerHandler(void)
 {
-	TickType_t wakeTime = xTaskGetTickCount();
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, (TickType_t) 10) == pdTRUE)
+	{
+		// Screen reset
+		BSP_LCD_Clear(backColor);
 
-	// Screen reset
-	BSP_LCD_Clear(backColor);
+		displayBook();
+		displayScrollBar();
+		drawToolbar(&mainToolbar);
 
-	// ---------- Book display ----------
+		// Swap the layers (double buffering)
+		while (!(LTDC->CDSR & LTDC_CDSR_VSYNCS)); // VSYNC
+		BSP_LCD_SetLayerVisible(visibleLayer, DISABLE); visibleLayer ^= 1;
+		BSP_LCD_SetLayerVisible(visibleLayer, ENABLE);
+		BSP_LCD_SelectLayer(1 - visibleLayer);
+
+		xSemaphoreGive(semaphore_ui);
+	}
+
+	osDelay(30);
+}
+
+void displayBook(void)
+{
 	BSP_LCD_SetBackColor(backColor);
 	BSP_LCD_SetTextColor(textColor);
 	BSP_LCD_SetFont(textFont);
 
-	uint8_t currentLine = 0;
-	uint16_t currentCharacterIndex = 0;
-	char *currentParagraph = book;
+	int32_t len = (book.linesSize - bookLineOffset < charMaxHeight) ? book.linesSize - bookLineOffset : charMaxHeight;
+	for (int32_t i = 0; i < len; i++)
+		displayLine(&book.lines[i + bookLineOffset], i);
+}
 
-	for (int i = 0; i < bookSize; i++)
+void displayLine(Line *line, int at)
+{
+	int16_t current_x = BOOK_MARGIN;
+	int8_t pxCounter = 0;
+
+	for (int32_t i = line->index; i < line->index + line->length; i++)
 	{
-		if (book[i] == '\0' || currentCharacterIndex == charMaxWidth)
+		uint8_t c = book.text[i - book.offset];
+		if (c == ' ')
 		{
-			BSP_LCD_DisplayStringAtLine(currentLine, (uint8_t*) currentParagraph);
-			currentParagraph = book + i + 1;
-			currentCharacterIndex = 0;
-
-			if (++currentLine == charMaxHeight)
-				break;
+			current_x += line->spaceSize;
+			if (pxCounter++ < line->additionalPixelPerFirstSpaces) current_x += 1;
 		}
-
-		currentCharacterIndex++;
+		else
+		{
+			BSP_LCD_DisplayCharWithoutBackground(current_x, at * textFont->Height, c);
+			current_x += textFont->Width;
+		}
 	}
+}
 
-	// ---------- Toolbar display ----------
-	drawToolbar(&mainToolbar);
+void displayScrollBar(void)
+{
+	float mult = BSP_LCD_GetYSize() / (float) (book.linesSize + charMaxHeight - 1);
+	int16_t y = bookLineOffset * mult;
+	int16_t h = charMaxHeight * mult;
 
-	// Swap the layers (double buffering)
-	while (!(LTDC->CDSR & LTDC_CDSR_VSYNCS)); // VSYNC
-	BSP_LCD_SetLayerVisible(visibleLayer, DISABLE); visibleLayer ^= 1;
-	BSP_LCD_SetLayerVisible(visibleLayer, ENABLE);
-	BSP_LCD_SelectLayer(1 - visibleLayer);
-
-	osDelay(30);
-	//osDelayUntil(&wakeTime, 34); // 30 FPS
+	BSP_LCD_SetTextColor(scrollbarColor);
+	BSP_LCD_FillRect(0, y, SCROLLBAR_WIDTH, h + 1);
 }
