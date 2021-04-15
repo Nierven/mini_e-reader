@@ -1445,7 +1445,7 @@ static void udp_reception_thread(void *arg)
 
 	LWIP_UNUSED_ARG(arg);
 
-	conn = netconn_new(NETCONN_UDP);
+	conn = netconn_new(NETCONN_TCP);
 	if (conn != NULL)
 	{
 		err = netconn_bind(conn, IP_ADDR_ANY, 8080);
@@ -1470,13 +1470,9 @@ static void udp_reception_thread(void *arg)
 					sprintf(text, "port de l'emetteur : %d", netbuf_fromport(buf));
 					BSP_LCD_DisplayStringAtLine(4,  (uint8_t*) text);
 
-					netbuf_copy(buf, text, netbuf_len(buf));
-					text[netbuf_len(buf)] = 0;
+					sprintf(text, "%d", netbuf_len(buf));
 					BSP_LCD_DisplayStringAtLine(5,  (uint8_t*) text);
 
-//					netconn_connect(conn, addr, port);
-//					buf->addr.addr = 0;
-//					netconn_send(conn, buf);
 					netbuf_delete(buf);
 				}
 			}
@@ -1502,19 +1498,23 @@ static void ethernet_client(void *arg)
 
 	addr = &a;
 	addr->addr = ((uint32_t) addr_dest[3] << 24) + ((uint32_t) addr_dest[2] << 16) + ((uint32_t) addr_dest[1] << 8) + ((uint32_t) addr_dest[0]);
-	conn_emission = netconn_new(NETCONN_UDP);
+	conn_emission = netconn_new(NETCONN_TCP);
 	buf = netbuf_new();
+
+	netconn_connect(conn_emission, addr, port_dest);
+	uint8_t data[] = { 't', 'e', 's', 't' };
 
 	for (;;)
 	{
-		sprintf(text, "%4d", i++);
+		netconn_write(conn_emission, data, 4, NETCONN_NOCOPY);
+
+		netconn_recv(conn_emission, &buf);
+		netbuf_copy(buf, text, netbuf_len(buf));
+		text[netbuf_len(buf)] = 0;
+		netbuf_delete(buf);
+
 		BSP_LCD_DisplayStringAtLine(10, (uint8_t*) text);
 
-		netbuf_ref(buf, text, strlen(text));
-		netconn_connect(conn_emission, addr, port_dest);
-		//buf->addr.addr = 0;
-		netconn_send(conn_emission, buf);
-		netbuf_delete(buf);
 		osDelay(1000);
 	}
 }
@@ -1534,8 +1534,8 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
 	BSP_LCD_DisplayStringAtLine(1, (uint8_t*) "Initialized.");
-  sys_thread_new("udp_reception_thread", udp_reception_thread, NULL, DEFAULT_THREAD_STACKSIZE, 4);
-//  sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
+//  sys_thread_new("udp_reception_thread", udp_reception_thread, NULL, DEFAULT_THREAD_STACKSIZE, 4);
+  sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
   /* Infinite loop */
   for(;;)
   {
