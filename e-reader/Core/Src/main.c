@@ -1431,70 +1431,20 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-static void udp_reception_thread(void *arg)
-{
-	err_t err, recv_err;
-	uint8_t addr_recue[4];
-	uint32_t addr_uint;
-	char text[50];
-
-	static struct netconn *conn;
-	static struct netbuf *buf;
-	static ip_addr_t *addr;
-	static unsigned short port;
-
-	LWIP_UNUSED_ARG(arg);
-
-	conn = netconn_new(NETCONN_TCP);
-	if (conn != NULL)
-	{
-		err = netconn_bind(conn, IP_ADDR_ANY, 8080);
-		if (err == ERR_OK)
-		{
-			while (1)
-			{
-				recv_err = netconn_recv(conn, &buf);
-				if (recv_err == ERR_OK)
-				{
-					addr = netbuf_fromaddr(buf);
-					addr_uint = (uint32_t) addr->addr;
-					port = netbuf_fromport(buf);
-					addr_recue[0] = (addr_uint & 0xFF000000) >> 24;
-					addr_recue[1] = (addr_uint & 0x00FF0000) >> 16;
-					addr_recue[2] = (addr_uint & 0x0000FF00) >> 8;
-					addr_recue[3] = (addr_uint & 0x000000FF);
-
-					sprintf(text, "adresse de l'emetteur : %d.%d.%d.%d", addr_recue[3], addr_recue[2], addr_recue[1], addr_recue[0]);
-					BSP_LCD_DisplayStringAtLine(3,  (uint8_t*) text);
-
-					sprintf(text, "port de l'emetteur : %d", netbuf_fromport(buf));
-					BSP_LCD_DisplayStringAtLine(4,  (uint8_t*) text);
-
-					sprintf(text, "%d", netbuf_len(buf));
-					BSP_LCD_DisplayStringAtLine(5,  (uint8_t*) text);
-
-					netbuf_delete(buf);
-				}
-			}
-		}
-		else
-		{
-			netconn_delete(conn);
-		}
-	}
-}
-
 static void ethernet_client(void *arg)
 {
-	static int i = 0;
-	uint8_t addr_dest[4] = { 169, 254, 61, 201 };
 	uint32_t a;
+//	uint8_t addr_dest[4] = { 192, 168, 137, 1 };
+	uint8_t addr_dest[4] = { 138, 68, 187, 163 };
 	char text[50] = "";
 
 	static struct netconn *conn_emission;
 	static struct netbuf *buf;
 	static ip_addr_t *addr;
-	static unsigned short port_dest = 8081;
+	static unsigned short port_dest = 80;
+
+	sprintf(text, "Connection to %d.%d.%d.%d:%d", addr_dest[0], addr_dest[1], addr_dest[2], addr_dest[3], port_dest);
+	BSP_LCD_DisplayStringAtLine(2, (uint8_t*) text);
 
 	addr = &a;
 	addr->addr = ((uint32_t) addr_dest[3] << 24) + ((uint32_t) addr_dest[2] << 16) + ((uint32_t) addr_dest[1] << 8) + ((uint32_t) addr_dest[0]);
@@ -1502,19 +1452,22 @@ static void ethernet_client(void *arg)
 	buf = netbuf_new();
 
 	netconn_connect(conn_emission, addr, port_dest);
-	uint8_t data[] = { 't', 'e', 's', 't' };
+	BSP_LCD_DisplayStringAtLine(3, (uint8_t*) "Connected");
+
+	char data[] = "GET / HTTP/1.1\r\nHost: gutendex.com\r\nConnection: close\r\n\r\n";
+	netconn_write(conn_emission, (uint8_t*) data, strlen(data), NETCONN_NOCOPY);
+
+	sprintf(text, "%d bytes written", strlen(data));
+	BSP_LCD_DisplayStringAtLine(4, (uint8_t*) text);
+
+	netconn_recv(conn_emission, &buf);
+
+	sprintf(text, "%d bytes received", netbuf_len(buf));
+	BSP_LCD_DisplayStringAtLine(6,  (uint8_t*) text);
+	netbuf_delete(buf);
 
 	for (;;)
 	{
-		netconn_write(conn_emission, data, 4, NETCONN_NOCOPY);
-
-		netconn_recv(conn_emission, &buf);
-		netbuf_copy(buf, text, netbuf_len(buf));
-		text[netbuf_len(buf)] = 0;
-		netbuf_delete(buf);
-
-		BSP_LCD_DisplayStringAtLine(10, (uint8_t*) text);
-
 		osDelay(1000);
 	}
 }
@@ -1534,8 +1487,7 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
 	BSP_LCD_DisplayStringAtLine(1, (uint8_t*) "Initialized.");
-//  sys_thread_new("udp_reception_thread", udp_reception_thread, NULL, DEFAULT_THREAD_STACKSIZE, 4);
-  sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
+	sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
   /* Infinite loop */
   for(;;)
   {
