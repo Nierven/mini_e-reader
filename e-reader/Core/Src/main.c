@@ -25,12 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "lwip/api.h"
-#include <string.h>
-
-#include "ethernet.h"
-#include "logic.h"
-#include "displayer.h"
+#include "global.h"
 
 /* USER CODE END Includes */
 
@@ -172,28 +167,6 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-  initEthernet();
-
-  BSP_LCD_Init();
-  	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-  	BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS + BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 4);
-
-  	BSP_LCD_DisplayOn();
-  	BSP_LCD_SetLayerVisible(0, DISABLE);
-  	BSP_LCD_SetLayerVisible(1, ENABLE);
-
-  	// Init second layer
-  	BSP_LCD_SelectLayer(1);
-  	BSP_LCD_Clear(LCD_COLOR_BLACK);
-  	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-  	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-  	BSP_LCD_SetFont(&Font16);
-
-  	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-  	BSP_LCD_DisplayStringAtLine(0, (uint8_t*) "Booted.");
-//  initLogic();
-//  initScreen();
-
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -218,16 +191,16 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of ethernet_task */
-  osThreadDef(ethernet_task, ethernet_task_fn, osPriorityRealtime, 0, 256);
+  osThreadDef(ethernet_task, ethernet_task_fn, osPriorityHigh, 0, 2048);
   ethernet_taskHandle = osThreadCreate(osThread(ethernet_task), NULL);
 
   /* definition and creation of displayer_task */
-//  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
-//  displayer_taskHandle = osThreadCreate(osThread(displayer_task), NULL);
+  osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
+  displayer_taskHandle = osThreadCreate(osThread(displayer_task), NULL);
 
   /* definition and creation of logic_task */
-//  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 2048);
-//  logic_taskHandle = osThreadCreate(osThread(logic_task), NULL);
+  osThreadDef(logic_task, logic_task_fn, osPriorityAboveNormal, 0, 2048);
+  logic_taskHandle = osThreadCreate(osThread(logic_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1431,47 +1404,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-static void ethernet_client(void *arg)
-{
-	uint32_t a;
-//	uint8_t addr_dest[4] = { 192, 168, 137, 1 };
-	uint8_t addr_dest[4] = { 138, 68, 187, 163 };
-	char text[50] = "";
-
-	static struct netconn *conn_emission;
-	static struct netbuf *buf;
-	static ip_addr_t *addr;
-	static unsigned short port_dest = 80;
-
-	sprintf(text, "Connection to %d.%d.%d.%d:%d", addr_dest[0], addr_dest[1], addr_dest[2], addr_dest[3], port_dest);
-	BSP_LCD_DisplayStringAtLine(2, (uint8_t*) text);
-
-	addr = &a;
-	addr->addr = ((uint32_t) addr_dest[3] << 24) + ((uint32_t) addr_dest[2] << 16) + ((uint32_t) addr_dest[1] << 8) + ((uint32_t) addr_dest[0]);
-	conn_emission = netconn_new(NETCONN_TCP);
-	buf = netbuf_new();
-
-	netconn_connect(conn_emission, addr, port_dest);
-	BSP_LCD_DisplayStringAtLine(3, (uint8_t*) "Connected");
-
-	char data[] = "GET / HTTP/1.1\r\nHost: gutendex.com\r\nConnection: close\r\n\r\n";
-	netconn_write(conn_emission, (uint8_t*) data, strlen(data), NETCONN_NOCOPY);
-
-	sprintf(text, "%d bytes written", strlen(data));
-	BSP_LCD_DisplayStringAtLine(4, (uint8_t*) text);
-
-	netconn_recv(conn_emission, &buf);
-
-	sprintf(text, "%d bytes received", netbuf_len(buf));
-	BSP_LCD_DisplayStringAtLine(6,  (uint8_t*) text);
-	netbuf_delete(buf);
-
-	for (;;)
-	{
-		osDelay(1000);
-	}
-}
-
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1486,14 +1418,16 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
-	BSP_LCD_DisplayStringAtLine(1, (uint8_t*) "Initialized.");
-	sys_thread_new("ethernet_client", ethernet_client, NULL, DEFAULT_THREAD_STACKSIZE, 4);
+
+  init();
+
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin);
+	HAL_GPIO_TogglePin(LED13_GPIO_Port, LED13_Pin);
     osDelay(500);
   }
+
   /* USER CODE END 5 */
 }
 

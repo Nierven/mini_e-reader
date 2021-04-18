@@ -2,6 +2,7 @@
 #define ETHERNET_H
 
 #include "cmsis_os.h"
+#include "lwip.h"
 
 void initEthernet(void);
 void ethernetHandler(void);

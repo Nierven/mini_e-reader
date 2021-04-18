@@ -1,9 +1,7 @@
-#ifndef UI_H
-#define UI_H
+#ifndef UI_READER_H
+#define UI_READER_H
 
-#include "cmsis_os.h"
-#include "stm32746g_discovery_lcd.h"
-#include "stm32746g_discovery_ts.h"
+#include "displayer.h"
 #include "toolbar.h"
 
 #define BOOK_MARGIN 20
@@ -19,8 +17,6 @@
 
 #define SCROLLBAR_WIDTH 4
 
-extern SemaphoreHandle_t semaphore_ui;
-
 extern uint8_t highContrast;
 extern uint32_t textColor;
 extern uint32_t backColor;
@@ -33,9 +29,11 @@ extern int32_t bookLineOffset;
 
 extern Toolbar mainToolbar;
 
-void initUI(void);
+void initUIReader(void);
+void displayUIReader(void);
+void uiReaderLogicHandler(void);
+
 int getFont(void);
 void setFont(int fontSize);
-void initMainToolbar(void);
 
-#endif // UI_H
+#endif // UI_READER_H
