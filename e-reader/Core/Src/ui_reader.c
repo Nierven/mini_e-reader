@@ -1,8 +1,6 @@
-#include "ui.h"
+#include "ui_reader.h"
 #include "logos.h"
 #include "book.h"
-
-SemaphoreHandle_t semaphore_ui;
 
 uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
@@ -15,7 +13,12 @@ sFONT *textFont;
 int32_t bookLineOffset = 0;
 static uint16_t bookWidth = 0;
 
-void initUI(void)
+static void displayBook(void);
+static void displayLine(Line *line, int at);
+static void displayScrollBar(void);
+static void initMainToolbar(void);
+
+void initUIReader(void)
 {
 	setFont(12);
 	initMainToolbar();
@@ -23,8 +26,144 @@ void initUI(void)
 	initBook();
 	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 	buildBook(bookWidth, textFont->Width);
+}
 
-	semaphore_ui = xSemaphoreCreateMutex();
+void displayUIReader(void)
+{
+	// Screen reset
+	BSP_LCD_Clear(backColor);
+
+	displayBook();
+	displayScrollBar();
+	drawToolbar(&mainToolbar);
+}
+
+void displayBook(void)
+{
+	BSP_LCD_SetBackColor(backColor);
+	BSP_LCD_SetTextColor(textColor);
+	BSP_LCD_SetFont(textFont);
+
+	int32_t len = (book.linesSize - bookLineOffset < charMaxHeight) ? book.linesSize - bookLineOffset : charMaxHeight;
+	for (int32_t i = 0; i < len; i++)
+		displayLine(&book.lines[i + bookLineOffset], i);
+}
+
+void displayLine(Line *line, int at)
+{
+	int16_t current_x = BOOK_MARGIN;
+	int8_t pxCounter = 0;
+
+	for (int32_t i = line->index; i < line->index + line->length; i++)
+	{
+		uint8_t c = book.text[i - book.offset];
+		if (c == ' ')
+		{
+			current_x += line->spaceSize;
+			if (pxCounter++ < line->additionalPixelPerFirstSpaces) current_x += 1;
+		}
+		else
+		{
+			BSP_LCD_DisplayCharWithoutBackground(current_x, at * textFont->Height, c);
+			current_x += textFont->Width;
+		}
+	}
+}
+
+void displayScrollBar(void)
+{
+	float mult = BSP_LCD_GetYSize() / (float) (book.linesSize + charMaxHeight - 1);
+	int16_t y = bookLineOffset * mult;
+	int16_t h = charMaxHeight * mult;
+
+	BSP_LCD_SetTextColor(scrollbarColor);
+	BSP_LCD_FillRect(0, y, SCROLLBAR_WIDTH, h + 1);
+}
+
+static int32_t cumulated_dy = 0;
+
+void uiReaderLogicHandler(void)
+{
+	static TickType_t toolbarLastActivityTime = 0;
+
+	// Reset toolbar hovering, which is only visual
+	toolbar_OnHover(&mainToolbar, 0, 0);
+
+	switch (getTouchscreenEvent())
+	{
+		case Click:
+		{
+			int32_t x = lastThumbState.x;
+			int32_t y = lastThumbState.y;
+			TickType_t t = xTaskGetTickCount();
+
+			if (!mainToolbar.isVisible)
+			{
+				mainToolbar.isVisible = 1;
+				toolbarLastActivityTime = t;
+			}
+			else
+			{
+				if (x > mainToolbar.x && x < mainToolbar.x + mainToolbar.w &&
+					y > mainToolbar.y && y < mainToolbar.y + mainToolbar.h)
+				{
+					toolbarLastActivityTime = t;
+					toolbar_OnClick(&mainToolbar, x, y);
+				}
+				else
+				{
+					mainToolbar.isVisible = 0;
+				}
+			}
+
+			break;
+		}
+		case Move:
+		{
+			int32_t x = lastThumbState.x;
+			int32_t y = lastThumbState.y;
+			int32_t dx = actualThumbState.x - x;
+			int32_t dy = actualThumbState.y - y;
+			TickType_t t = xTaskGetTickCount();
+
+			if (mainToolbar.isVisible && x > mainToolbar.x && x < mainToolbar.x + mainToolbar.w &&
+										 y > mainToolbar.y && y < mainToolbar.y + mainToolbar.h)
+			{
+				toolbarLastActivityTime = t;
+				toolbar_OnHover(&mainToolbar, x, y);
+			}
+			else
+			{
+				cumulated_dy += dy;
+				int16_t dline = cumulated_dy / textFont->Height;
+				cumulated_dy %= textFont->Height;
+
+				if (bookLineOffset - dline > book.linesSize - 1)
+					dline = bookLineOffset - book.linesSize + 1;
+				else if (bookLineOffset - dline < 0)
+					dline = bookLineOffset;
+
+				if (dline != 0)
+				{
+					// Wait for the ui to be available
+					if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+					{
+						bookLineOffset -= dline;
+						xSemaphoreGive(semaphore_ui);
+					}
+				}
+			}
+
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	if (mainToolbar.isVisible && (xTaskGetTickCount() - toolbarLastActivityTime) > TOOLBAR_MAX_INACTIVITY_TIME)
+		mainToolbar.isVisible = 0;
 }
 
 int getFont(void)
@@ -195,5 +334,5 @@ void orientationButton_OnClick(ToolbarButton *button)
 
 void bookListButton_OnClick(ToolbarButton *button)
 {
-
+	setActualPerspective(Bookshelf);
 }
