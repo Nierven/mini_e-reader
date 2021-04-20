@@ -5,7 +5,6 @@ static void (*localUiLogicHandlers[5])(void);
 
 void init(void)
 {
-//	initEthernet();
 	initScreen();
 	initLogic();
 	initSD();

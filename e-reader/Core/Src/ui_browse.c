@@ -35,8 +35,8 @@ void initUIBrowse(void)
 
 void downloadList(void)
 {
-//	uint8_t data[32765];
-//	getStructOnline(data, 32765, "/books");
+//	char data[1000]; uint32_t bytesDownloaded = 0;
+//	getStructOnline((uint8_t*) data, "/", &bytesDownloaded);
 
 //	for (int bookCpt = 0; bookCpt < MAX_BOOKS_LOADED; bookCpt++)
 //	{
@@ -91,17 +91,29 @@ void downloadList(void)
 	li->isHovered = 0;
 
 	listSize = 1;
+
+//	downloadBook(li->info);
 }
+
+static void writeBuffer(netbuf_t *buf);
 
 void downloadBook(BookInfo *info)
 {
-	uint8_t data[32765]; uint32_t bytesDownloaded = 0;
-	getStructOnline(data, 32765, "/", &bytesDownloaded);
+	char newFilename[100]; sprintf(newFilename, "/books/%s", info->filename);
+	f_open(&SDFile, newFilename, FA_WRITE | FA_CREATE_ALWAYS);
 
-	getFileOnline(data, 32765, info->link, &bytesDownloaded);
+	getFileOnlineCallback(info->link, &writeBuffer);
 
-	writeFile(info->filename, data, 0, bytesDownloaded, NULL);
+	f_close(&SDFile);
 	buildBookshelf();
+}
+
+void writeBuffer(netbuf_t *buf)
+{
+	uint8_t data[1024];
+	netbuf_copy(buf, data, netbuf_len(buf));
+
+	f_write(&SDFile, data, netbuf_len(buf), NULL);
 }
 
 void displayUIBrowse(void)
