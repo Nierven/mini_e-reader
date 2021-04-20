@@ -7,5 +7,6 @@
 void initSD(void);
 void readFile(char *filename, uint8_t *buffer, uint32_t offset, uint32_t length, UINT *bytesRead);
 void writeFile(char *filename, uint8_t *buffer, uint32_t offset, uint32_t length, UINT *bytesWritten);
+void deleteFile(char *filename);
 
 #endif // SD_H

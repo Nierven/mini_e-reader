@@ -30,7 +30,7 @@ void drawButton(Button *b)
 								(uint8_t*) b->tooltip, LEFT_MODE);
 	}
 
-	BSP_LCD_DrawBitmap(b->x, b->y, !b->isEnabled, b->icon);
+	BSP_LCD_DrawBitmap(b->x, b->y, !b->isEnabled, 0, b->icon);
 }
 
 void loadIcon(Button *b, char *filename)
@@ -44,14 +44,47 @@ void loadIcon(Button *b, char *filename)
 
 void drawListItem(ListItem *item)
 {
+	BSP_LCD_SetTextColor(item->isHovered ? 0xFFE6E6E6 : 0xFFF0F0F0);
+	BSP_LCD_FillRect(item->x, item->y, item->w, item->h);
+	BSP_LCD_SetTextColor(0xFFFFAB00);
+	BSP_LCD_DrawHLine(item->x, item->y, item->w);
+	BSP_LCD_DrawHLine(item->x, item->y + item->h, item->w);
 
-}
+	uint8_t hasAuthor = strlen(item->info->author) > 0;
 
-void loadItemIcon(ListItem *item, char *filename)
-{
-	static uint8_t tmp_buf[ICON_MAX_SIZE];
+	char firstLine[60] = "";
+	if (item->info->hasDate && item->info->publicationDate >= 0) sprintf(firstLine, "%s (%d)", item->info->name, item->info->publicationDate);
+	else if (item->info->hasDate && item->info->publicationDate < 0) sprintf(firstLine, "%s (%d BC)", item->info->name, abs(item->info->publicationDate));
+	else sprintf(firstLine, "%s", item->info->name);
 
-	UINT bytesRead = 0;
-	readFile(filename, tmp_buf, 0, ICON_MAX_SIZE, &bytesRead);
-	memcpy(item->icon, tmp_buf, bytesRead);
+	char secondLine[60] = "";
+	if (hasAuthor) sprintf(secondLine, "by: %s", item->info->author);
+
+	BSP_LCD_SetBackColor(item->isHovered ? 0xFFE6E6E6 : 0xFFF0F0F0);
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+
+	BSP_LCD_SetFont((strlen(firstLine) > (item->w - 20) / Font16.Width) ? &Font12 : &Font16);
+	BSP_LCD_DisplayStringAt(item->x + 10, item->y + 10, (uint8_t*) firstLine, LEFT_MODE);
+
+	BSP_LCD_SetFont(&Font12);
+	BSP_LCD_DisplayStringAt(item->x + 10, item->y + 10 + Font16.Height, (uint8_t*) secondLine, LEFT_MODE);
+
+	if (strlen(item->info->language) != 0)
+	{
+		BSP_LCD_SetFont(&Font12);
+		BSP_LCD_SetTextColor(0xFFE0E0E0);
+		BSP_LCD_FillRect(item->x + item->w - ITEM_LANG_MARGIN - ITEM_LANG_HPADDING * 2 - Font12.Width * 2,
+				         item->y + item->h - ITEM_LANG_MARGIN - ITEM_LANG_VPADDING * 2 - Font12.Height,
+						 Font12.Width * 2 + ITEM_LANG_HPADDING * 2,
+						 Font12.Height + ITEM_LANG_VPADDING * 2);
+
+		BSP_LCD_SetBackColor(0xFFE0E0E0);
+		BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+		BSP_LCD_DisplayStringAt(item->x + item->w - ITEM_LANG_MARGIN - ITEM_LANG_HPADDING - Font12.Width * 2,
+				                item->y + item->h - ITEM_LANG_MARGIN - ITEM_LANG_VPADDING - Font12.Height,
+						        (uint8_t*) item->info->language, LEFT_MODE);
+	}
+
+	if (item->icon != NULL)
+		BSP_LCD_DrawBitmap(item->x + item->w - ITEM_LANG_MARGIN - 24, item->y + ITEM_LANG_MARGIN, 0, 1, item->icon);
 }

@@ -39,9 +39,9 @@ void initUIReader(void)
 	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 }
 
-void changeBook(char *filename, BookInfo *info)
+void changeBook(BookInfo *info)
 {
-	openBook(filename, info);
+	openBook(info);
 	buildBook(bookWidth, textFont->Width);
 
 	bookLineOffset = 0;

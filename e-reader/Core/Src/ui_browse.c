@@ -1,12 +1,20 @@
 #include "ui_browse.h"
 #include "ui_elements.h"
+#include "ui_bookshelf.h"
 #include "ui_reader.h"
 #include <string.h>
-#include "book.h"
+#include "ethernet.h"
 #include "SD.h"
 
 Button bookshelfButton;
 static void bookshelfButton_OnClick(Button *button);
+
+static int listSize = 0;
+static uint8_t downloadIcon[ICON_MAX_SIZE];
+static ListItem listItems[MAX_BOOKS_LOADED];
+static void listItem_OnClick(ListItem *li);
+
+static SemaphoreHandle_t semaphore_browse;
 
 void initUIBrowse(void)
 {
@@ -19,11 +27,95 @@ void initUIBrowse(void)
 	bookshelfButton.w = 24;
 	bookshelfButton.h = 24;
 	bookshelfButton.isEnabled = 1;
+
+	downloadList();
+
+	semaphore_browse = xSemaphoreCreateMutex();
+}
+
+void downloadList(void)
+{
+//	uint8_t data[32765];
+//	getStructOnline(data, 32765, "/books");
+
+//	for (int bookCpt = 0; bookCpt < MAX_BOOKS_LOADED; bookCpt++)
+//	{
+//		f_readdir(&dir, &fno);
+//		if (fno.fname[0] == 0)
+//		{
+//			listSize = bookCpt;
+//			break;
+//		}
+//
+//		// New book, register it
+//		sprintf(path, "books/%s", fno.fname);
+//		initBookInfo(&booksInfo[bookCpt]);
+//		readBookInfo(path, &booksInfo[bookCpt]);
+//
+//		// Create an associated list item
+//		ListItem *li = &listItems[bookCpt];
+//
+//		li->x = 20;
+//		li->y = 40 + bookCpt*50;
+//		li->w = BSP_LCD_GetXSize() - 20 * 2;
+//		li->h = 50;
+//
+//		li->info = &booksInfo[bookCpt];
+//		li->icon = NULL;
+//
+//		li->onClickCallback = &listItem_OnClick;
+//		li->onIconClickCallback = NULL;
+//		li->isHovered = 0;
+//	}
+
+	ListItem *li = &listItems[0];
+
+	li->x = 20;
+	li->y = 40;
+	li->w = BSP_LCD_GetXSize() - 20 * 2;
+	li->h = 50;
+
+	li->info = &onlineBooksInfo[0];
+	strcpy(li->info->name, "test");
+	strcpy(li->info->author, "me");
+	strcpy(li->info->link, "/files/45/45-0.txt");
+	strcpy(li->info->filename, "45-0.txt");
+	strcpy(li->info->language, "en");
+	li->info->publicationDate = 2001;
+	li->info->hasDate = 1;
+
+	li->icon = NULL;
+
+	li->onClickCallback = &listItem_OnClick;
+	li->onIconClickCallback = NULL;
+	li->isHovered = 0;
+
+	listSize = 1;
+}
+
+void downloadBook(BookInfo *info)
+{
+	uint8_t data[32765]; uint32_t bytesDownloaded = 0;
+	getStructOnline(data, 32765, "/", &bytesDownloaded);
+
+	getFileOnline(data, 32765, info->link, &bytesDownloaded);
+
+	writeFile(info->filename, data, 0, bytesDownloaded, NULL);
+	buildBookshelf();
 }
 
 void displayUIBrowse(void)
 {
 	BSP_LCD_Clear(LCD_COLOR_WHITE);
+
+	// Wait for the bookshelf to be available
+	if(xSemaphoreTake(semaphore_browse, (TickType_t) 10) == pdTRUE)
+	{
+		for (int i = 0; i < listSize; i++)
+			drawListItem(&listItems[i]);
+
+		xSemaphoreGive(semaphore_browse);
+	}
 
 	BSP_LCD_SetTextColor(0xFF3D5AFE);
 	BSP_LCD_FillRect(0, 0, BSP_LCD_GetXSize(), 30);
@@ -53,9 +145,16 @@ void uiBrowseLogicHandler(void)
 				bookshelfButton.onClickCallback(&bookshelfButton);
 			}
 
-			if (y > BSP_LCD_GetYSize() / 2)
+			for (int i = 0; i < listSize; i++)
 			{
-				setActualPerspective(Reader);
+				ListItem *li = &listItems[i];
+
+				if (x > li->x && x < li->x + li->w &&
+						 y > li->y && y < li->y + li->h)
+				{
+					li->onClickCallback(li);
+					break;
+				}
 			}
 
 			break;
@@ -72,6 +171,13 @@ void uiBrowseLogicHandler(void)
 						                x > bookshelfButton.x && x < bookshelfButton.x + bookshelfButton.w &&
 						                y > bookshelfButton.y && y < bookshelfButton.y + bookshelfButton.h;
 
+			for (int i = 0; i < listSize; i++)
+			{
+				ListItem *li = &listItems[i];
+				li->isHovered = x > li->x && x < li->x + li->w &&
+								y > li->y && y < li->y + li->h;
+			}
+
 			break;
 		}
 		default:
@@ -85,4 +191,10 @@ void bookshelfButton_OnClick(Button *button)
 {
 	button->isHovered = 0;
 	setActualPerspective(Bookshelf);
+}
+
+void listItem_OnClick(ListItem *li)
+{
+	downloadBook(li->info);
+	li->icon = downloadIcon;
 }

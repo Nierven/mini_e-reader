@@ -4,6 +4,7 @@
 #include "cmsis_os.h"
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
+#include "book.h"
 
 #define ICON_MAX_SIZE 4096
 
@@ -33,6 +34,10 @@ typedef struct Button_t
 void drawButton(Button *b);
 void loadIcon(Button *b, char *filename);
 
+#define ITEM_LANG_MARGIN 5
+#define ITEM_LANG_HPADDING 5
+#define ITEM_LANG_VPADDING 2
+
 typedef struct ListItem_t
 {
 	int32_t x;
@@ -40,14 +45,14 @@ typedef struct ListItem_t
 	int32_t w;
 	int32_t h;
 
+	BookInfo *info;
 	uint8_t isHovered;
-	uint8_t icon[ICON_MAX_SIZE];
+	uint8_t *icon;
 
 	void (*onClickCallback)(struct ListItem_t *item);
 	void (*onIconClickCallback)(struct ListItem_t *item);
 } ListItem;
 
 void drawListItem(ListItem *item);
-void loadItemIcon(ListItem *item, char *filename);
 
 #endif // UI_ELEMENTS_H

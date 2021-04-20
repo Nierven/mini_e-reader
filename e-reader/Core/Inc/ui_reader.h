@@ -31,7 +31,7 @@ extern uint16_t bookWidth;
 extern Toolbar mainToolbar;
 
 void initUIReader(void);
-void changeBook(char *filename, BookInfo *info);
+void changeBook(BookInfo *info);
 void displayUIReader(void);
 void uiReaderLogicHandler(void);
 

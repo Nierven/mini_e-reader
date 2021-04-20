@@ -61,7 +61,6 @@ UART_HandleTypeDef huart1;
 SDRAM_HandleTypeDef hsdram1;
 
 osThreadId defaultTaskHandle;
-osThreadId ethernet_taskHandle;
 osThreadId displayer_taskHandle;
 osThreadId logic_taskHandle;
 /* USER CODE BEGIN PV */
@@ -79,7 +78,6 @@ static void MX_DMA2D_Init(void);
 static void MX_CRC_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 void StartDefaultTask(void const * argument);
-void ethernet_task_fn(void const * argument);
 void displayer_task_fn(void const * argument);
 void logic_task_fn(void const * argument);
 
@@ -152,10 +150,6 @@ int main(void)
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* definition and creation of ethernet_task */
-  osThreadDef(ethernet_task, ethernet_task_fn, osPriorityHigh, 0, 2048);
-  ethernet_taskHandle = osThreadCreate(osThread(ethernet_task), NULL);
 
   /* definition and creation of displayer_task */
   osThreadDef(displayer_task, displayer_task_fn, osPriorityNormal, 0, 2048);
@@ -803,26 +797,6 @@ void StartDefaultTask(void const * argument)
   }
 
   /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_ethernet_task_fn */
-/**
-* @brief Function implementing the ethernet_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_ethernet_task_fn */
-void ethernet_task_fn(void const * argument)
-{
-  /* USER CODE BEGIN ethernet_task_fn */
-
-  /* Infinite loop */
-  for(;;)
-  {
-	  ethernetHandler();
-  }
-
-  /* USER CODE END ethernet_task_fn */
 }
 
 /* USER CODE BEGIN Header_displayer_task_fn */

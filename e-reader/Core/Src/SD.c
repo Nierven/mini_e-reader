@@ -20,3 +20,8 @@ void writeFile(char *filename, uint8_t *buffer, uint32_t offset, uint32_t length
 	f_write(&SDFile, buffer + offset, length, bytesWritten);
 	f_close(&SDFile);
 }
+
+void deleteFile(char *filename)
+{
+	f_unlink(filename);
+}

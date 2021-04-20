@@ -1049,7 +1049,7 @@ void BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t RGB_Code)
   * @param  pbmp: Pointer to Bmp picture address in the internal Flash
   * @retval None
   */
-void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t masked, uint8_t *pbmp)
+void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t masked, uint8_t alpha, uint8_t *pbmp)
 {
   uint32_t index = 0, width = 0, height = 0, bit_pixel = 0, bit_pixel_byte = 0;
   uint32_t address;
@@ -1098,11 +1098,22 @@ void BSP_LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t masked, uint8_t *p
 		uint8_t *layer = (uint8_t*)(address);
 		for (uint32_t i = 0; i < width; i++)
 		{
-//			if (pbmp[i*bit_pixel_byte+0] + pbmp[i*bit_pixel_byte+1] + pbmp[i*bit_pixel_byte+2] != 0)
+			layer[i*4+0] = pbmp[i*bit_pixel_byte+0] / 2;  // BLUE
+			layer[i*4+1] = pbmp[i*bit_pixel_byte+1] / 2;  // GREEN
+			layer[i*4+2] = pbmp[i*bit_pixel_byte+2] / 2;  // RED
+			layer[i*4+3] = 255;                       // ALPHA
+		}
+	}
+	else if (alpha == 1)
+	{
+		uint8_t *layer = (uint8_t*)(address);
+		for (uint32_t i = 0; i < width; i++)
+		{
+			if (pbmp[i*bit_pixel_byte+0] + pbmp[i*bit_pixel_byte+1] + pbmp[i*bit_pixel_byte+2] < 200)
 			{
-				layer[i*4+0] = pbmp[i*bit_pixel_byte+0] / 2;  // BLUE
-				layer[i*4+1] = pbmp[i*bit_pixel_byte+1] / 2;  // GREEN
-				layer[i*4+2] = pbmp[i*bit_pixel_byte+2] / 2;  // RED
+				layer[i*4+0] = pbmp[i*bit_pixel_byte+0];  // BLUE
+				layer[i*4+1] = pbmp[i*bit_pixel_byte+1];  // GREEN
+				layer[i*4+2] = pbmp[i*bit_pixel_byte+2];  // RED
 				layer[i*4+3] = 255;                       // ALPHA
 			}
 		}

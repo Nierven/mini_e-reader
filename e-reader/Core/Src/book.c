@@ -3,16 +3,21 @@
 #include <math.h>
 
 Book loadedBook;
-BookInfo booksInfo[50];
+BookInfo booksInfo[MAX_BOOKS_LOADED];
+BookInfo onlineBooksInfo[MAX_BOOKS_LOADED];
 
 void initBook(void)
 {
+	loadedBook.info = NULL;
 	loadedBook.size = 0;
 	loadedBook.linesSize = 0;
 }
 
 void initBookInfo(BookInfo *info)
 {
+	info->filename[0] = '\0';
+	info->link[0] = '\0';
+
 	info->name[0] = '\0';
 	info->author[0] = '\0';
 	info->language[0] = '\0';
@@ -45,6 +50,8 @@ void readBookInfo(char *filename, BookInfo *info)
 		return;
 
 	initBookInfo(info);
+
+	strcpy(info->filename, filename);
 
 	char nameHeader[] = "Title: ";
 	char authorHeader[] = "Author: ";
@@ -103,10 +110,10 @@ void readBookInfo(char *filename, BookInfo *info)
 	info->offset = startPtr + strlen(startHeader) + 1 - data;
 }
 
-void openBook(char *filename, BookInfo *info)
+void openBook(BookInfo *info)
 {
 	UINT bytesRead = 0;
-	readFile(filename, (uint8_t*) loadedBook.text, 0, MAX_LOADED_BOOK_SIZE, &bytesRead);
+	readFile(info->filename, (uint8_t*) loadedBook.text, 0, MAX_LOADED_BOOK_SIZE, &bytesRead);
 
 	if (bytesRead == 0)
 		return;
