@@ -20,11 +20,17 @@ typedef struct
 {
 	char name[50];
 	char author[50];
-	uint8_t hasDate;
+	char language[4];
 	int16_t publicationDate;
+	uint8_t hasDate;
+} BookInfo;
+
+typedef struct
+{
+	BookInfo info;
 
 	int32_t size;
-	char text[MAX_LOADED_BOOK_SIZE];
+	char text[MAX_LOADED_BOOK_SIZE + 1];
 
 	int32_t linesSize;
 	Line lines[MAX_LOADED_BOOK_SIZE / 8];

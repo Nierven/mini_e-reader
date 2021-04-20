@@ -50,15 +50,15 @@ void drawToolbar(Toolbar *toolbar)
 		}
 	}
 
-	uint8_t hasAuthor = strlen(book.author) > 0;
+	uint8_t hasAuthor = strlen(book.info.author) > 0;
 
 	char firstLine[60] = "";
-	if (book.hasDate && book.publicationDate >= 0) sprintf(firstLine, "%s (%d)", book.name, book.publicationDate);
-	else if (book.hasDate && book.publicationDate < 0) sprintf(firstLine, "%s (%d BC)", book.name, abs(book.publicationDate));
-	else sprintf(firstLine, "%s", book.name);
+	if (book.info.hasDate && book.info.publicationDate >= 0) sprintf(firstLine, "%s (%d)", book.info.name, book.info.publicationDate);
+	else if (book.info.hasDate && book.info.publicationDate < 0) sprintf(firstLine, "%s (%d BC)", book.info.name, abs(book.info.publicationDate));
+	else sprintf(firstLine, "%s", book.info.name);
 
 	char secondLine[60] = "";
-	if (hasAuthor) sprintf(secondLine, "by: %s", book.author);
+	if (hasAuthor) sprintf(secondLine, "by: %s", book.info.author);
 
 	int16_t maxLength = strlen(firstLine) * TITLEBAR_FONT.Width > strlen(secondLine) * TITLEBAR_SUBFONT.Width ?
 			strlen(firstLine) * TITLEBAR_FONT.Width :

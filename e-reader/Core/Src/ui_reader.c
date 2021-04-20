@@ -56,7 +56,7 @@ void displayLine(Line *line, int at)
 
 	for (int32_t i = line->index; i < line->index + line->length; i++)
 	{
-		uint8_t c = book.text[i - book.offset];
+		uint8_t c = book.text[i];
 		if (c == ' ')
 		{
 			current_x += line->spaceSize;
