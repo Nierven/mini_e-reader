@@ -2,60 +2,188 @@
 #include <string.h>
 #include <math.h>
 
-Book book;
+Book loadedBook;
+BookInfo booksInfo[MAX_BOOKS_LOADED];
+BookInfo onlineBooksInfo[MAX_BOOKS_LOADED];
 
 void initBook(void)
 {
-	book.name[0] = '\0';
-	book.author[0] = '\0';
-	book.publicationDate = -1;
+	loadedBook.info = NULL;
+	loadedBook.size = 0;
+	loadedBook.linesSize = 0;
+}
 
-	book.size = 0;
-	book.text[0] = '\0';
+void initBookInfo(BookInfo *info)
+{
+	info->filename[0] = '\0';
+	info->link[0] = '\0';
 
-	book.offset = 0;
-	book.linesSize = 0;
+	info->name[0] = '\0';
+	info->author[0] = '\0';
+	info->language[0] = '\0';
+	info->publicationDate = 0;
+	info->hasDate = 0;
 
-	/* -------------- Testing zone -------------- */
+	info->offset = 0;
+}
 
-	char *test = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ultrices orci eu magna porta, in feugiat lectus convallis. Fusce id rhoncus mauris. Duis maximus lorem eget est interdum tempus. Aliquam tempus condimentum nulla, sit amet consectetur elit ultricies sit amet. Nulla vel egestas nibh. Vivamus suscipit faucibus porttitor. Nullam non orci id nisl accumsan semper in in mi. Proin congue dolor ac ligula egestas, sed consequat elit aliquet. Ut turpis nulla, consequat eu tortor at, fermentum gravida justo. In ac magna sed mi dictum fermentum eu eget urna.\n\n"
-				 "Mauris molestie, ligula eget tincidunt volutpat, ligula nibh viverra nulla, vitae tincidunt turpis mi vel ligula. Donec ac purus vel tortor dapibus bibendum id in lectus. Quisque finibus feugiat justo, ut iaculis lacus posuere in. Proin dignissim quam ut interdum varius. Quisque tempor neque nibh, eu rhoncus odio iaculis at. Vivamus consequat vehicula dolor, sit amet suscipit mi mattis vel. Etiam id augue non risus egestas iaculis at non metus. Curabitur vel orci orci.\n\n"
-				 "Fusce sit amet interdum lorem. Aliquam erat volutpat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Sed hendrerit non metus quis iaculis. Praesent iaculis venenatis dolor, non convallis sem euismod sed. Sed dictum enim et metus molestie, a iaculis purus cursus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Donec sit amet orci justo. Sed at vehicula lorem. Etiam lacinia magna at urna finibus accumsan. Suspendisse id risus nulla. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus tortor ex, bibendum ut mi et, accumsan pellentesque quam. In rhoncus magna venenatis erat eleifend euismod.\n\n"
-				 "Cras non metus finibus, gravida nunc in, cursus purus. Interdum et malesuada fames ac ante ipsum primis in faucibus. Donec semper cursus nisl, et luctus odio eleifend dignissim. Nullam nec lorem tempus, congue eros rutrum, mattis nunc. Morbi semper sodales condimentum. Nulla vulputate neque in sapien dignissim finibus. Quisque venenatis, neque vitae euismod porta, quam mi pharetra erat, quis ultricies ligula erat eu purus. Quisque et tincidunt ligula, a pharetra justo.\n\n"
-				 "Vestibulum non augue non nibh commodo auctor. Pellentesque lobortis viverra urna ac ultricies. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Maecenas magna ante, ultricies vel neque ac, efficitur maximus augue. Proin interdum dui ac eros vulputate, posuere condimentum tortor imperdiet. Morbi eu velit quis enim pellentesque aliquet. Suspendisse luctus congue turpis ut dapibus.";
+int32_t getInfoLength(char *ptr, int32_t offset)
+{
+	char *start = ptr + offset;
+	int i;
+	for (i = 0; i < 50; i++)
+		if (start[i] == '\n')
+			break;
 
-	book.size = strlen(test);
-	strcpy(book.text, test);
+	return i;
+}
 
-	strcpy(book.name, "Test book");
-	strcpy(book.author, "Quentin Rousset");
-	book.publicationDate = 2021;
-	book.hasDate = 1;
+void readBookInfo(char *filename, BookInfo *info)
+{
+	const int32_t header_size = 2048;
+	char data[header_size];
 
-	/* -------------- Testing zone -------------- */
+	UINT bytesRead = 0;
+	readFile(filename, (uint8_t*) data, 0, header_size, &bytesRead);
+
+	if (bytesRead == 0)
+		return;
+
+	initBookInfo(info);
+
+	strcpy(info->filename, filename);
+
+	char nameHeader[] = "Title: ";
+	char authorHeader[] = "Author: ";
+	char dateHeader[] = "Release Date: ";
+	char languageHeader[] = "Language: ";
+	char startHeader[] = " ***";
+
+	char *namePtr = strstr(data, nameHeader);
+	if (namePtr != NULL)
+	{
+		int32_t nameLength = getInfoLength(namePtr, strlen(nameHeader));
+		memcpy(info->name, namePtr + strlen(nameHeader), nameLength); info->name[nameLength] = '\0';
+	}
+	else
+	{
+		strcpy(info->name, "Unnamed");
+	}
+
+	char *authorPtr = strstr(data, authorHeader);
+	if (authorPtr != NULL)
+	{
+		int32_t authorLength = getInfoLength(authorPtr, strlen(authorHeader));
+		memcpy(info->author, authorPtr + strlen(authorHeader), authorLength); info->author[authorLength] = '\0';
+	}
+
+	char *datePtr = strstr(data, dateHeader);
+	if (datePtr != NULL)
+	{
+		char *yearPtr = strstr(datePtr, ", ");
+		char *yearEndPtr = strstr(datePtr, " [");
+
+		if (yearPtr != NULL && yearEndPtr != NULL)
+		{
+			char tmp[10] = "";
+			memcpy(tmp, yearPtr + 2, yearEndPtr - yearPtr + 2);
+			tmp[yearEndPtr - yearPtr + 2] = '\0';
+			info->publicationDate = atoi(tmp);
+			info->hasDate = 1;
+		}
+	}
+
+	char *languagePtr = strstr(data, languageHeader);
+	if (languagePtr != NULL)
+	{
+		char tmp[50] = "";
+		int32_t languageLength = getInfoLength(languagePtr, strlen(languageHeader));
+		memcpy(tmp, languagePtr + strlen(languageHeader), languageLength); tmp[languageLength] = '\0';
+
+		if (strcmp(tmp, "English") == 0)
+			sprintf(info->language, "en");
+		else if (strcmp(tmp, "French") == 0)
+			sprintf(info->language, "fr");
+	}
+
+	char *startPtr = strstr(namePtr, startHeader);
+	info->offset = startPtr + strlen(startHeader) + 1 - data;
+}
+
+void openBook(BookInfo *info)
+{
+	UINT bytesRead = 0;
+	readFile(info->filename, (uint8_t*) loadedBook.text, 0, MAX_LOADED_BOOK_SIZE, &bytesRead);
+
+	if (bytesRead == 0)
+		return;
+
+	initBook();
+
+	loadedBook.size = bytesRead;
+	loadedBook.text[loadedBook.size] = '\0';
+	loadedBook.info = info;
+
+//	for (int i = 0; i < book.size; i++)
+//	{
+//		if (book.text[i] == '\r' && loadedBook.text[i+1] == '\n')
+//		{
+//			loadedBook.text[i] = 0x0E; i++;
+//			if (loadedBook.text[i+1] != '\r' || loadedBook.text[i+2] != '\n')
+//			{
+//				loadedBook.text[i] = ' ';
+//			}
+//			else
+//			{
+//				loadedBook.text[i+1] = 0x0E;
+//				i += 2;
+//			}
+//		}
+//	}
 }
 
 void buildBook(uint16_t width, uint16_t charWidth)
 {
+	int32_t currentLineIndex = loadedBook.info->offset;
 	int32_t currentLineNb = 0;
-	int32_t currentLineIndex = 0;
 	int8_t lettersCounter = 0;
 	int8_t wordLettersCounter = 0;
 	int8_t spacesCounter = 0;
 
 	const int16_t minSpace = round(0.7 * charWidth);
 	const int16_t maxSpace = round(2.0 * charWidth);
+	const int16_t maxNbOfChars = width / charWidth;
 
-	for (int32_t i = 0; i < book.size + 1; i++)
+	for (int32_t i = currentLineIndex; i < loadedBook.size + 1; i++)
 	{
-		if (book.text[i] == ' ' || book.text[i] == '\n' || book.text[i] == '\0')
+		if (loadedBook.text[i] == ' ' || loadedBook.text[i] == '\n' || loadedBook.text[i] == '\0' || wordLettersCounter > maxNbOfChars)
 		{
 			// Get the optimal space length according to how many letters and space we have
 			int actualOptimalSpace = width - lettersCounter * charWidth;
 			if (spacesCounter != 0) actualOptimalSpace /= spacesCounter;
 
 			// If too small, then discard the last word and compute the best length
-			if (actualOptimalSpace < minSpace)
+			if (wordLettersCounter >= maxNbOfChars)
+			{
+				// Register the new line
+			 	loadedBook.lines[currentLineNb].index = currentLineIndex;
+			 	loadedBook.lines[currentLineNb].length = lettersCounter - 1;
+			 	loadedBook.lines[currentLineNb].spaceSize = 0;
+				loadedBook.lines[currentLineNb].additionalPixelPerFirstSpaces = 0;
+				currentLineNb++;
+
+				// Update the indices
+				if (wordLettersCounter > maxNbOfChars)
+					currentLineIndex = i;
+				else if (wordLettersCounter == maxNbOfChars)
+					currentLineIndex = i+1;
+
+				// Reset the counters
+				lettersCounter = 0;
+				wordLettersCounter = 0;
+				spacesCounter = 0;
+			}
+			else if (actualOptimalSpace < minSpace)
 			{
 				// Discard the last word
 				lettersCounter -= wordLettersCounter;
@@ -71,10 +199,10 @@ void buildBook(uint16_t width, uint16_t charWidth)
 				}
 
 				// Register the new line
-			 	book.lines[currentLineNb].index = currentLineIndex;
-			 	book.lines[currentLineNb].length = lettersCounter + spacesCounter;
-			 	book.lines[currentLineNb].spaceSize = actualOptimalSpace;
-				book.lines[currentLineNb].additionalPixelPerFirstSpaces = pxPerFirstSpaces;
+			 	loadedBook.lines[currentLineNb].index = currentLineIndex;
+			 	loadedBook.lines[currentLineNb].length = lettersCounter + spacesCounter;
+			 	loadedBook.lines[currentLineNb].spaceSize = actualOptimalSpace;
+			 	loadedBook.lines[currentLineNb].additionalPixelPerFirstSpaces = pxPerFirstSpaces;
 				currentLineNb++;
 
 				// Update the indices
@@ -86,17 +214,17 @@ void buildBook(uint16_t width, uint16_t charWidth)
 				wordLettersCounter = 0;
 				spacesCounter = 0;
 			}
-			else if (book.text[i] == '\n' || book.text[i] == '\0')
+			else if (loadedBook.text[i] == '\n' || loadedBook.text[i] == '\0')
 			{
 				// If too much space left, make the width normal
 				if (actualOptimalSpace > maxSpace)
 					actualOptimalSpace = charWidth;
 
 				// Register the new line
-			 	book.lines[currentLineNb].index = currentLineIndex;
-			 	book.lines[currentLineNb].length = lettersCounter + spacesCounter;
-			 	book.lines[currentLineNb].spaceSize = actualOptimalSpace;
-				book.lines[currentLineNb].additionalPixelPerFirstSpaces = 0;
+			 	loadedBook.lines[currentLineNb].index = currentLineIndex;
+			 	loadedBook.lines[currentLineNb].length = lettersCounter + spacesCounter;
+			 	loadedBook.lines[currentLineNb].spaceSize = actualOptimalSpace;
+				loadedBook.lines[currentLineNb].additionalPixelPerFirstSpaces = 0;
 				currentLineNb++;
 
 				// Update the indices
@@ -120,5 +248,5 @@ void buildBook(uint16_t width, uint16_t charWidth)
 		}
 	}
 
-	book.linesSize = currentLineNb;
+	loadedBook.linesSize = currentLineNb;
 }

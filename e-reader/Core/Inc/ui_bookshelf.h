@@ -4,6 +4,7 @@
 #include "displayer.h"
 
 void initUIBookshelf(void);
+void buildBookshelf(void);
 void displayUIBookshelf(void);
 void uiBookshelfLogicHandler(void);
 

@@ -4,6 +4,7 @@
 #include "ethernet.h"
 #include "logic.h"
 #include "displayer.h"
+#include "SD.h"
 
 #include "ui_splash.h"
 #include "ui_bookshelf.h"

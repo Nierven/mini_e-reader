@@ -1,31 +1,51 @@
 #include "ui_reader.h"
-#include "logos.h"
-#include "book.h"
+#include "SD.h"
 
 uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
 uint32_t textColor = LCD_COLOR_BLACK;
 uint32_t scrollbarColor = 0xFF909090;
-uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
 
 int32_t bookLineOffset = 0;
-static uint16_t bookWidth = 0;
+uint16_t bookWidth = 0;
 
 static void displayBook(void);
 static void displayLine(Line *line, int at);
 static void displayScrollBar(void);
 static void initMainToolbar(void);
 
+Toolbar mainToolbar;
+
+static Button *toolbarButtons[TOOLBAR_SIZE];
+static Button zoomInButton;
+static Button zoomOutButton;
+static Button contrastButton;
+static Button topButton;
+static Button bookListButton;
+
+static void zoomInButton_OnClick(Button *button);
+static void zoomOutButton_OnClick(Button *button);
+static void contrastButton_OnClick(Button *button);
+static void topButton_OnClick(Button *button);
+static void bookListButton_OnClick(Button *button);
+
 void initUIReader(void)
 {
 	setFont(12);
 	initMainToolbar();
 
-	initBook();
 	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
+}
+
+void changeBook(BookInfo *info)
+{
+	openBook(info);
 	buildBook(bookWidth, textFont->Width);
+
+	bookLineOffset = 0;
+	topButton.isEnabled = 0;
 }
 
 void displayUIReader(void)
@@ -44,9 +64,9 @@ void displayBook(void)
 	BSP_LCD_SetTextColor(textColor);
 	BSP_LCD_SetFont(textFont);
 
-	int32_t len = (book.linesSize - bookLineOffset < charMaxHeight) ? book.linesSize - bookLineOffset : charMaxHeight;
+	int32_t len = (loadedBook.linesSize - bookLineOffset < charMaxHeight) ? loadedBook.linesSize - bookLineOffset : charMaxHeight;
 	for (int32_t i = 0; i < len; i++)
-		displayLine(&book.lines[i + bookLineOffset], i);
+		displayLine(&loadedBook.lines[i + bookLineOffset], i);
 }
 
 void displayLine(Line *line, int at)
@@ -56,7 +76,7 @@ void displayLine(Line *line, int at)
 
 	for (int32_t i = line->index; i < line->index + line->length; i++)
 	{
-		uint8_t c = book.text[i - book.offset];
+		uint8_t c = loadedBook.text[i];
 		if (c == ' ')
 		{
 			current_x += line->spaceSize;
@@ -72,7 +92,7 @@ void displayLine(Line *line, int at)
 
 void displayScrollBar(void)
 {
-	float mult = BSP_LCD_GetYSize() / (float) (book.linesSize + charMaxHeight - 1);
+	float mult = BSP_LCD_GetYSize() / (float) (loadedBook.linesSize + charMaxHeight - 1);
 	int16_t y = bookLineOffset * mult;
 	int16_t h = charMaxHeight * mult;
 
@@ -122,7 +142,7 @@ void uiReaderLogicHandler(void)
 		{
 			int32_t x = lastThumbState.x;
 			int32_t y = lastThumbState.y;
-			int32_t dx = actualThumbState.x - x;
+//			int32_t dx = actualThumbState.x - x;
 			int32_t dy = actualThumbState.y - y;
 			TickType_t t = xTaskGetTickCount();
 
@@ -138,8 +158,8 @@ void uiReaderLogicHandler(void)
 				int16_t dline = cumulated_dy / textFont->Height;
 				cumulated_dy %= textFont->Height;
 
-				if (bookLineOffset - dline > book.linesSize - 1)
-					dline = bookLineOffset - book.linesSize + 1;
+				if (bookLineOffset - dline > loadedBook.linesSize - 1)
+					dline = bookLineOffset - loadedBook.linesSize + 1;
 				else if (bookLineOffset - dline < 0)
 					dline = bookLineOffset;
 
@@ -149,6 +169,7 @@ void uiReaderLogicHandler(void)
 					if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 					{
 						bookLineOffset -= dline;
+						topButton.isEnabled = (bookLineOffset != 0);
 						xSemaphoreGive(semaphore_ui);
 					}
 				}
@@ -175,24 +196,8 @@ void setFont(int fontSize)
 {
 	sFONT *fonts[5] = { &Font8, &Font12, &Font16, &Font20, &Font24 };
 	textFont = fonts[(fontSize - 8) / 4];
-	charMaxWidth = BSP_LCD_GetXSize() / textFont->Width;
 	charMaxHeight = BSP_LCD_GetYSize() / textFont->Height;
 }
-
-Toolbar mainToolbar;
-
-static ToolbarButton *toolbarButtons[TOOLBAR_SIZE];
-static ToolbarButton zoomInButton;
-static ToolbarButton zoomOutButton;
-static ToolbarButton contrastButton;
-static ToolbarButton orientationButton;
-static ToolbarButton bookListButton;
-
-static void zoomInButton_OnClick(ToolbarButton *button);
-static void zoomOutButton_OnClick(ToolbarButton *button);
-static void contrastButton_OnClick(ToolbarButton *button);
-static void orientationButton_OnClick(ToolbarButton *button);
-static void bookListButton_OnClick(ToolbarButton *button);
 
 void initMainToolbar(void)
 {
@@ -212,49 +217,53 @@ void initMainToolbar(void)
 	mainToolbar.buttons = toolbarButtons;
 
 	zoomInButton.onClickCallback = &zoomInButton_OnClick;
-	zoomInButton.icon = zoomInBitmap;
+	loadIcon(&zoomInButton, "icons/zoom_in.bmp");
 	strcpy(zoomInButton.tooltip, "Zoom In");
 	toolbarButtons[0] = &zoomInButton;
 
 	zoomOutButton.onClickCallback = &zoomOutButton_OnClick;
-	zoomOutButton.icon = zoomOutBitmap;
+	loadIcon(&zoomOutButton, "icons/zoom_out.bmp");
 	strcpy(zoomOutButton.tooltip, "Zoom Out");
 	toolbarButtons[1] = &zoomOutButton;
 
 	contrastButton.onClickCallback = &contrastButton_OnClick;
-	contrastButton.icon = contrastBitmap;
+	loadIcon(&contrastButton, "icons/contrast.bmp");
 	strcpy(contrastButton.tooltip, "Change the contrast mode");
 	toolbarButtons[2] = &contrastButton;
 
-	orientationButton.onClickCallback = &orientationButton_OnClick;
-	orientationButton.icon = orientationBitmap;
-	strcpy(orientationButton.tooltip, "Rotate the screen");
-	toolbarButtons[3] = &orientationButton;
+	topButton.onClickCallback = &topButton_OnClick;
+	loadIcon(&topButton, "icons/top.bmp");
+	strcpy(topButton.tooltip, "Return to top");
+	toolbarButtons[3] = &topButton;
 
 	bookListButton.onClickCallback = &bookListButton_OnClick;
-	bookListButton.icon = bookListBitmap;
-	strcpy(bookListButton.tooltip, "Back to the Book List");
+	loadIcon(&bookListButton, "icons/book_36.bmp");
+	strcpy(bookListButton.tooltip, "Back to the Bookshelf");
 	toolbarButtons[4] = &bookListButton;
 
 	for (int i = 0; i < mainToolbar.size; i++)
 	{
 		toolbarButtons[i]->x = mainToolbar.x + mainToolbar.padding;
 		toolbarButtons[i]->y = mainToolbar.y + mainToolbar.padding + (mainToolbar.buttonHeight + mainToolbar.padding) * i;
+		toolbarButtons[i]->w = BUTTON_WIDTH;
+		toolbarButtons[i]->h = BUTTON_HEIGHT;
 		toolbarButtons[i]->isEnabled = 1;
 	}
+
+	topButton.isEnabled = 0;
 }
 
-void zoomInButton_OnClick(ToolbarButton *button)
+void zoomInButton_OnClick(Button *button)
 {
 	// Wait for the ui to be available
 	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
-		int32_t actualFirstIndex = book.lines[bookLineOffset].index;
+		int32_t actualFirstIndex = loadedBook.lines[bookLineOffset].index;
 
 		int newFontSize = getFont() + 4;
 		setFont(newFontSize);
 
-		if (newFontSize == 24)
+		if (newFontSize == 20)
 			button->isEnabled = 0;
 
 		if (!zoomOutButton.isEnabled)
@@ -263,10 +272,10 @@ void zoomInButton_OnClick(ToolbarButton *button)
 		buildBook(bookWidth, textFont->Width);
 
 		// Search for the first word shown using the previous zoom level
-		for (int32_t i = bookLineOffset; i < book.linesSize; i++)
+		for (int32_t i = bookLineOffset; i < loadedBook.linesSize; i++)
 		{
-			if (book.lines[i].index <= actualFirstIndex &&
-				book.lines[i].index + book.lines[i].length > actualFirstIndex)
+			if (loadedBook.lines[i].index <= actualFirstIndex &&
+				loadedBook.lines[i].index + loadedBook.lines[i].length > actualFirstIndex)
 			{
 				bookLineOffset = i;
 				break;
@@ -280,12 +289,12 @@ void zoomInButton_OnClick(ToolbarButton *button)
 	}
 }
 
-void zoomOutButton_OnClick(ToolbarButton *button)
+void zoomOutButton_OnClick(Button *button)
 {
 	// Wait for the ui to be available
 	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
 	{
-		int32_t actualFirstIndex = book.lines[bookLineOffset].index;
+		int32_t actualFirstIndex = loadedBook.lines[bookLineOffset].index;
 
 		int newFontSize = getFont() - 4;
 		setFont(newFontSize);
@@ -299,10 +308,10 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 		buildBook(bookWidth, textFont->Width);
 
 		// Search for the first word shown using the previous zoom level
-		int32_t start = bookLineOffset < book.linesSize ? bookLineOffset : book.linesSize - 1;
+		int32_t start = bookLineOffset < loadedBook.linesSize ? bookLineOffset : loadedBook.linesSize - 1;
 		for (int32_t i = start; i >= 0; i--)
 		{
-			if (book.lines[i].index <= actualFirstIndex)
+			if (loadedBook.lines[i].index <= actualFirstIndex)
 			{
 				bookLineOffset = i;
 				break;
@@ -313,7 +322,7 @@ void zoomOutButton_OnClick(ToolbarButton *button)
 	}
 }
 
-void contrastButton_OnClick(ToolbarButton *button)
+void contrastButton_OnClick(Button *button)
 {
 	// Wait for the ui to be available
 	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
@@ -327,12 +336,19 @@ void contrastButton_OnClick(ToolbarButton *button)
 	}
 }
 
-void orientationButton_OnClick(ToolbarButton *button)
+void topButton_OnClick(Button *button)
 {
+	// Wait for the ui to be available
+	if(xSemaphoreTake(semaphore_ui, portMAX_DELAY) == pdTRUE)
+	{
+		bookLineOffset = 0;
+		topButton.isEnabled = 0;
 
+		xSemaphoreGive(semaphore_ui);
+	}
 }
 
-void bookListButton_OnClick(ToolbarButton *button)
+void bookListButton_OnClick(Button *button)
 {
 	setActualPerspective(Bookshelf);
 }

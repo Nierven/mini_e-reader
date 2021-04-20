@@ -2,7 +2,7 @@
 #include <string.h>
 
 #define POINT_DT 350
-#define SPLASH_DT 3000
+#define SPLASH_DT 1000
 
 static uint8_t pointCount = 0;
 static sFONT *splashFont = &Font20;

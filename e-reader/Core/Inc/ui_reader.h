@@ -3,6 +3,7 @@
 
 #include "displayer.h"
 #include "toolbar.h"
+#include "book.h"
 
 #define BOOK_MARGIN 20
 
@@ -21,15 +22,16 @@ extern uint8_t highContrast;
 extern uint32_t textColor;
 extern uint32_t backColor;
 extern uint32_t scrollbarColor;
-extern uint16_t charMaxWidth;
 extern uint16_t charMaxHeight;
 extern sFONT *textFont;
 
 extern int32_t bookLineOffset;
+extern uint16_t bookWidth;
 
 extern Toolbar mainToolbar;
 
 void initUIReader(void);
+void changeBook(BookInfo *info);
 void displayUIReader(void);
 void uiReaderLogicHandler(void);
 

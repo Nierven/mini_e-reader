@@ -4,34 +4,14 @@
 #include "cmsis_os.h"
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
+#include "ui_elements.h"
 #include <string.h>
-
-#define TOOLBAR_HOVER_BOX_MARGIN 2
-
-#define TOOLTIP_MARGIN 25
-#define TOOLTIP_HPADDING 13
-#define TOOLTIP_VPADDING 9
-#define TOOLTIP_FONT Font16
-#define TOOLTIP_RADIUS 10
 
 #define TITLEBAR_HPADDING 13
 #define TITLEBAR_VPADDING 9
 #define TITLEBAR_RADIUS 10
 #define TITLEBAR_FONT Font16
 #define TITLEBAR_SUBFONT Font12
-
-typedef struct ToolbarButton_t
-{
-	int32_t x;
-	int32_t y;
-
-	uint8_t isEnabled;
-	uint8_t isHovered;
-	char tooltip[25];
-	uint8_t *icon;
-
-	void (*onClickCallback)(struct ToolbarButton_t *button);
-} ToolbarButton;
 
 typedef struct Toolbar_t
 {
@@ -42,7 +22,7 @@ typedef struct Toolbar_t
 
 	int32_t buttonWidth;
 	int32_t buttonHeight;
-	ToolbarButton **buttons;
+	Button **buttons;
 
 	uint8_t isVisible;
 

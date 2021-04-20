@@ -1,4 +1,5 @@
-/**
+
+#include "lwip/api.h"/**
   ******************************************************************************
   * File Name          : LWIP.h
   * Description        : This file provides code for the configuration
