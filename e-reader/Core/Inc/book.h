@@ -1,6 +1,7 @@
 #ifndef BOOK_H
 #define BOOK_H
 
+#include "SD.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -34,6 +35,7 @@ typedef struct
 extern Book book;
 
 void initBook(void);
+void openBook(char *filename);
 void buildBook(uint16_t width, uint16_t charWidth);
 
 #endif // BOOK_H

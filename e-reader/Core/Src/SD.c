@@ -3,13 +3,20 @@
 
 void initSD(void)
 {
-	uint32_t byteswritten;
-	uint8_t wtext[] = "plop";
-	uint8_t rtext[_MAX_SS];
-
 	f_mount(&SDFatFS, (TCHAR const*)SDPath, 0);
-	f_open(&SDFile, "TEST.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-	f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
+}
+
+void readFile(char *filename, uint8_t *buffer, uint32_t offset, uint32_t length, UINT *bytesRead)
+{
+	f_open(&SDFile, filename, FA_READ);
+	f_lseek(&SDFile, offset);
+	f_read(&SDFile, buffer, length, bytesRead);
 	f_close(&SDFile);
-//	f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
+}
+
+void writeFile(char *filename, uint8_t *buffer, uint32_t offset, uint32_t length, UINT *bytesWritten)
+{
+	f_open(&SDFile, filename, FA_WRITE | FA_CREATE_ALWAYS);
+	f_write(&SDFile, buffer + offset, length, bytesWritten);
+	f_close(&SDFile);
 }

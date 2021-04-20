@@ -6,7 +6,6 @@ uint8_t highContrast = 1;
 uint32_t backColor = LCD_COLOR_WHITE;
 uint32_t textColor = LCD_COLOR_BLACK;
 uint32_t scrollbarColor = 0xFF909090;
-uint16_t charMaxWidth;
 uint16_t charMaxHeight;
 sFONT *textFont;
 
@@ -24,6 +23,7 @@ void initUIReader(void)
 	initMainToolbar();
 
 	initBook();
+	openBook("527.txt");
 	bookWidth = BSP_LCD_GetXSize() - BOOK_MARGIN * 2;
 	buildBook(bookWidth, textFont->Width);
 }
@@ -122,7 +122,7 @@ void uiReaderLogicHandler(void)
 		{
 			int32_t x = lastThumbState.x;
 			int32_t y = lastThumbState.y;
-			int32_t dx = actualThumbState.x - x;
+//			int32_t dx = actualThumbState.x - x;
 			int32_t dy = actualThumbState.y - y;
 			TickType_t t = xTaskGetTickCount();
 
@@ -175,7 +175,6 @@ void setFont(int fontSize)
 {
 	sFONT *fonts[5] = { &Font8, &Font12, &Font16, &Font20, &Font24 };
 	textFont = fonts[(fontSize - 8) / 4];
-	charMaxWidth = BSP_LCD_GetXSize() / textFont->Width;
 	charMaxHeight = BSP_LCD_GetYSize() / textFont->Height;
 }
 
@@ -254,7 +253,7 @@ void zoomInButton_OnClick(ToolbarButton *button)
 		int newFontSize = getFont() + 4;
 		setFont(newFontSize);
 
-		if (newFontSize == 24)
+		if (newFontSize == 20)
 			button->isEnabled = 0;
 
 		if (!zoomOutButton.isEnabled)
