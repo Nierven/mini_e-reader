@@ -23,25 +23,28 @@ typedef struct
 	char language[4];
 	int16_t publicationDate;
 	uint8_t hasDate;
+
+	int32_t offset;
 } BookInfo;
 
 typedef struct
 {
-	BookInfo info;
+	BookInfo *info;
 
 	int32_t size;
 	char text[MAX_LOADED_BOOK_SIZE + 1];
 
 	int32_t linesSize;
 	Line lines[MAX_LOADED_BOOK_SIZE / 8];
-
-	int32_t offset;
 } Book;
 
-extern Book book;
+extern Book loadedBook;
+extern BookInfo booksInfo[50];
 
 void initBook(void);
-void openBook(char *filename);
+void initBookInfo(BookInfo *info);
+void readBookInfo(char *filename, BookInfo *info);
+void openBook(char *filename, BookInfo *info);
 void buildBook(uint16_t width, uint16_t charWidth);
 
 #endif // BOOK_H

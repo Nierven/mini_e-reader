@@ -3,6 +3,7 @@
 
 #include "displayer.h"
 #include "toolbar.h"
+#include "book.h"
 
 #define BOOK_MARGIN 20
 
@@ -25,10 +26,12 @@ extern uint16_t charMaxHeight;
 extern sFONT *textFont;
 
 extern int32_t bookLineOffset;
+extern uint16_t bookWidth;
 
 extern Toolbar mainToolbar;
 
 void initUIReader(void);
+void changeBook(char *filename, BookInfo *info);
 void displayUIReader(void);
 void uiReaderLogicHandler(void);
 
