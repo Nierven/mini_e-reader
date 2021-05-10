@@ -1,0 +1,70 @@
+site_name: Mini E-Reader par Quentin Rousset
+
+repo_url: https://github.com/Nierven/mini_e-reader
+repo_name: Nierven/mini_e-reader
+edit_uri: edit/master/website/docs/
+
+copyright: Copyright &copy; 2021 Quentin Rousset
+
+nav:
+  - Présentation : index.md
+  - Bibliothèque :
+    - library/index.md
+  - Téléchargement :
+    - guten/index.md
+    - Interface utilisateur : guten/ui.md
+    - Ethernet : guten/ethernet.md
+    - TCP : guten/tcp.md
+    - Gutenberg : guten/gutenberg.md
+  - Lecteur :
+    - reader/index.md
+  - Mot de la fin : conclusion/index.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+
+theme: 
+  name: material
+  language: fr
+
+  logo: images/favicon.png
+  favicon: images/favicon.ico
+  icon:
+    repo: fontawesome/brands/github
+  
+  features:
+    - navigation.tabs
+    - navigation.top
+
+  palette:
+    - media : "(prefers-color-scheme: light)"
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Passer au mode sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: red
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Passer au mode clair
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Nierven
+      name: Quentin Rousset on GitHub
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/q_rousset
+      name: Quentin Rousset on Twitter
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/quentin-rousset/
+      name: Quentin Rousset on LinkedIn
+
+plugins:
+  - search:
+      lang: fr
+      prebuild_index: true
