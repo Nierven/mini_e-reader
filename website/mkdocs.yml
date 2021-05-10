@@ -3,7 +3,7 @@ site_name: Mini E-Reader par Quentin Rousset
 site_url: https://nierven.github.io/mini_e-reader/
 repo_url: https://github.com/Nierven/mini_e-reader
 repo_name: Nierven/mini_e-reader
-edit_uri: edit/master/website/docs/
+edit_uri: blob/main/website/docs/
 
 copyright: Copyright &copy; 2021 Quentin Rousset
 
