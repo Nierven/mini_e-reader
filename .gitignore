@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# MkDocs
+*/site/**
+
 # STMCube IDE specific
 */Debug/**
 .metadata/**
