@@ -1,5 +1,9 @@
 name: ci
 
+defaults:
+  run:
+    working-directory: website
+
 on:
   push:
     branches:
@@ -15,5 +19,4 @@ jobs:
         with:
           python-version: 3.x
       - run: pip install mkdocs-material
-      - run: cd website
       - run: mkdocs gh-deploy --force
