@@ -11,12 +11,14 @@ nav:
   - Présentation : index.md
   - Bibliothèque :
     - library/index.md
-  - Téléchargement :
+    - Carte SD : library/sd.md
+    - UI & UX : library/ui.md
+    - Livres : library/books.md
+  - Gutenberg :
     - guten/index.md
-    - Interface utilisateur : guten/ui.md
     - Ethernet : guten/ethernet.md
     - TCP : guten/tcp.md
-    - Gutenberg : guten/gutenberg.md
+    - Téléchargement : guten/gutenberg.md
   - Lecteur :
     - reader/index.md
   - Mot de la fin : conclusion/index.md
@@ -35,19 +37,18 @@ theme:
     repo: fontawesome/brands/github
   
   features:
-    - navigation.tabs
     - navigation.top
 
   palette:
     - media : "(prefers-color-scheme: light)"
-      primary: black
+      primary: deep orange
       accent: light blue
       toggle:
         icon: material/weather-sunny
         name: Passer au mode sombre
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: red
+      primary: green
       accent: light blue
       toggle:
         icon: material/weather-night
