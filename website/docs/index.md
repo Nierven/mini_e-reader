@@ -2,7 +2,7 @@
 
 **Réalisé par Quentin Rousset**
 
-![mini e-reader](/images/e-reader.png)
+![mini e-reader](images/e-reader.png)
 
 ## Présentation du projet
 
