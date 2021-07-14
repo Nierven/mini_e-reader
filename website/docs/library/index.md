@@ -1,17 +1,7 @@
-# Welcome to MkDocs
+# Bibliothèque
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+La bibliothèque de livres permet d'accéder à ses livres téléchargés et de les ouvrir dans le lectur numérique. Les fichiers sont stockés sur la carte SD au format *.txt* avec une en-tête contenant de nombreuses métadonnées comme le genre, la langue, le nom de l'auteur ou le titre du livre. Passée cette en-tête se trouve le livre et enfin quelques informations statistiques sur la fin.
 
-## Commands
+![Vue de la Bibliothèque](/images/library.jpg)
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+Les pages qui suivent expliquent la configuration de la carte SD ainsi que le travail réalisé sur l'UI/UX et la structure objet qui décrivent les livres.
