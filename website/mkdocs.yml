@@ -27,7 +27,7 @@ markdown_extensions:
   - toc:
       permalink: true
 
-theme: 
+theme:
   name: material
   language: fr
 
